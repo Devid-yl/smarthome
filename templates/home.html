@@ -1,21 +1,26 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Accueil</title>
-</head>
-<body>
-    <h1>Bienvenue sur la page d'accueil</h1>
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<h1>Bienvenue sur la page d'accueil</h1>
 
     {% if user.is_authenticated %}
-        <p>Bonjour {{ user.username }} !</p>
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Déconnexion</button>
-        </form>
+    <p>Bonjour {{ user.username }} !</p>
+    {% if user.profile_image %}
+        <img src="{{ user.profile_image.url }}" alt="Photo de profil" style="width:100px;height:100px;border-radius:50%;">
     {% else %}
-        <p>Vous n'êtes pas connecté.</p>
-        <a href="{% url 'login' %}">Se connecter</a>
+        <img src="{% static 'images/default_profile.png' %}" alt="Photo par défaut" style="width:100px;height:100px;border-radius:50%;">
     {% endif %}
-</body>
-</html>
+    <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Déconnexion</button>
+    </form>
+{% else %}
+    <p>Vous n'êtes pas connecté.</p>
+    <a href="{% url 'login' %}">Se connecter</a>
+{% endif %}
+
+{% endblock %}

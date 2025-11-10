@@ -10,7 +10,7 @@ def register_view(request):
         return redirect('home')  # redirige si déjà connecté
 
     if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
             login(request, user)

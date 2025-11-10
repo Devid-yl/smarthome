@@ -17,11 +17,17 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
-from .views import home_view
+from django.conf.urls import handler404
+from .views import home_view, redirect_404_to_home
+from django.conf import settings
+from django.conf.urls.static import static
 
+
+handler404 = redirect_404_to_home
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('home/', home_view, name='home'),
-    path('', include('apps.accounts.urls')),
-]
+    path('', home_view, name='home'),
+    path('login/', include('apps.accounts.urls')),
+    path('houses/', include('apps.houses.urls')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

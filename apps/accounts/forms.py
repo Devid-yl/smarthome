@@ -5,10 +5,11 @@ from .models import CustomUser
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)
+    profile_image = forms.ImageField(required=False) 
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'email', 'password1', 'password2', 'profile_image')
 
 
 class CustomAuthenticationForm(AuthenticationForm):

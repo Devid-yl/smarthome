@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes maisons{% endblock %}
+
+{% block content %}
+<h2>Mes maisons</h2>
+
+<a href="{% url 'add_house' %}" class="btn">➕ Ajouter une maison</a>
+<a href="{% url 'add_room' %}" class="btn">➕ Ajouter une pièce</a>
+
+<ul class="house-list">
+    {% for house in houses %}
+        <li>
+            <strong>{{ house.name }}</strong> - {{ house.address }}
+            <ul class="room-list">
+                {% for room in house.rooms.all %}
+                    <li>{{ room.name }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% empty %}
+        <p>Aucune maison pour le moment.</p>
+    {% endfor %}
+</ul>
+{% endblock %}

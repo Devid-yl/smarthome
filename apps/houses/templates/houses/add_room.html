@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajouter une pièce{% endblock %}
+
+{% block content %}
+<h2>Ajouter une pièce</h2>
+<form method="post" class="form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">Enregistrer</button>
+</form>
+{% endblock %}
