@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Connexion</h2>
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% end %}
+<form method="POST">
+    {% module xsrf_form_html() %}
+    <p>
+        <label>Nom d'utilisateur:</label>
+        <input type="text" name="username" required>
+    </p>
+    <p>
+        <label>Mot de passe:</label>
+        <input type="password" name="password" required>
+    </p>
+    <button type="submit">Se connecter</button>
+</form>
+<a href="/register">Pas encore inscrit ? Créez un compte</a>
+{% end %}

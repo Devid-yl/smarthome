@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier mon profil{% end %}
+
+{% block content %}
+<h2>Modifier mon profil</h2>
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% end %}
+<form method="post" enctype="multipart/form-data" class="form">
+    {% module xsrf_form_html() %}
+    <p>
+        <label>Nom d'utilisateur:</label>
+        <input type="text" name="username" value="{{ user.username }}" required>
+    </p>
+    <p>
+        <label>Email:</label>
+        <input type="email" name="email" value="{{ user.email }}" required>
+    </p>
+    <p>
+        <label>Téléphone (optionnel):</label>
+        <input type="text" name="phone_number" value="{{ user.phone_number if user.phone_number else '' }}">
+    </p>
+    <p>
+        <label>Photo de profil (optionnel):</label>
+        {% if user.profile_image %}
+            <img src="/media/{{ user.profile_image }}" alt="Photo actuelle" style="width:100px;height:100px;border-radius:50%;display:block;margin:0.5rem 0;">
+        {% end %}
+        <input type="file" name="profile_image" accept="image/*">
+    </p>
+    <p>
+        <label>Nouveau mot de passe (laisser vide pour ne pas changer):</label>
+        <input type="password" name="new_password">
+    </p>
+    <p>
+        <label>Confirmer le nouveau mot de passe:</label>
+        <input type="password" name="confirm_password">
+    </p>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/profile" class="btn btn-secondary">Annuler</a>
+</form>
+{% end %}

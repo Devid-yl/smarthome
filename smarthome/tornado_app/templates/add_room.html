@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajouter une pièce{% end %}
+
+{% block content %}
+<h2>Ajouter une pièce</h2>
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% end %}
+<form method="post" class="form">
+    {% module xsrf_form_html() %}
+    <input type="hidden" name="house_id" value="{{ house_id }}">
+    <p>
+        <label>Nom de la pièce:</label>
+        <input type="text" name="name" required>
+    </p>
+    <button type="submit" class="btn">Enregistrer</button>
+</form>
+{% end %}

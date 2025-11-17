@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil{% end %}
+
+{% block content %}
+<h1>Bienvenue sur la page d'accueil</h1>
+
+{% if current_user %}
+    <p>Bonjour {{ user.username if user else current_user['username'] }} !</p>
+    {% if user and user.profile_image %}
+        <img src="/media/{{ user.profile_image }}" alt="Photo de profil" style="width:100px;height:100px;border-radius:50%;">
+    {% else %}
+        <img src="/static/images/default_profile.png" alt="Photo par défaut" style="width:100px;height:100px;border-radius:50%;">
+    {% end %}
+    <form action="/logout" method="post">
+        {% module xsrf_form_html() %}
+        <button type="submit">Déconnexion</button>
+    </form>
+{% else %}
+    <p>Vous n'êtes pas connecté.</p>
+    <a href="/login">Se connecter</a>
+{% end %}
+
+{% end %}

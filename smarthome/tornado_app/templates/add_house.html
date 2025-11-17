@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajouter une maison{% end %}
+
+{% block content %}
+<h2>Ajouter une maison</h2>
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% end %}
+<form method="post" class="form">
+    {% module xsrf_form_html() %}
+    <p>
+        <label>Nom:</label>
+        <input type="text" name="name" required>
+    </p>
+    <p>
+        <label>Adresse:</label>
+        <input type="text" name="address">
+    </p>
+    <button type="submit" class="btn">Enregistrer</button>
+</form>
+{% end %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes maisons{% end %}
+
+{% block content %}
+<h2>Mes maisons</h2>
+
+<a href="/houses/add" class="btn btn-primary">➕ Ajouter une maison</a>
+
+<ul class="item-list">
+    {% if houses %}
+        {% for house in houses %}
+            <li class="item-card">
+                <div class="item-header">
+                    <span class="item-title">{{ house.name }}</span>
+                    <div class="item-actions">
+                        <a href="/houses/edit/{{ house.id }}" class="btn btn-warning btn-icon" title="Modifier">✏️</a>
+                        <form method="post" action="/houses/delete/{{ house.id }}" style="display:inline;">
+                            {% module xsrf_form_html() %}
+                            <button type="submit" class="btn btn-danger btn-icon" title="Supprimer" onclick="return confirm('Supprimer cette maison et toutes ses pièces ?')">🗑️</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="item-content">
+                    📍 {{ house.address if house.address else 'Pas d\'adresse' }}
+                </div>
+                <a href="/houses/add_room?house_id={{ house.id }}" class="btn btn-secondary btn-small">➕ Ajouter une pièce</a>
+                {% if house.rooms %}
+                    <ul class="sub-list">
+                        {% for room in house.rooms %}
+                            <li class="sub-item">
+                                <span>🚪 {{ room.name }}</span>
+                                <div class="item-actions">
+                                    <a href="/rooms/edit/{{ room.id }}" class="btn btn-warning btn-icon" title="Modifier">✏️</a>
+                                    <form method="post" action="/rooms/delete/{{ room.id }}" style="display:inline;">
+                                        {% module xsrf_form_html() %}
+                                        <button type="submit" class="btn btn-danger btn-icon" title="Supprimer" onclick="return confirm('Supprimer cette pièce ?')">🗑️</button>
+                                    </form>
+                                </div>
+                            </li>
+                        {% end %}
+                    </ul>
+                {% end %}
+            </li>
+        {% end %}
+    {% else %}
+        <p>Aucune maison pour le moment.</p>
+    {% end %}
+</ul>
+{% end %}

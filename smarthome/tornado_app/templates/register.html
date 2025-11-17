@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Inscription</h2>
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% end %}
+<form method="POST" enctype="multipart/form-data">
+    {% module xsrf_form_html() %}
+    <p>
+        <label>Nom d'utilisateur:</label>
+        <input type="text" name="username" required>
+    </p>
+    <p>
+        <label>Email:</label>
+        <input type="email" name="email" required>
+    </p>
+    <p>
+        <label>Mot de passe:</label>
+        <input type="password" name="password1" required>
+    </p>
+    <p>
+        <label>Confirmer le mot de passe:</label>
+        <input type="password" name="password2" required>
+    </p>
+    <p>
+        <label>Photo de profil (optionnel):</label>
+        <input type="file" name="profile_image" accept="image/*">
+    </p>
+    <button type="submit">S'inscrire</button>
+</form>
+<a href="/login">Déjà inscrit ? Connectez-vous</a>
+{% end %}

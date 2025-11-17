@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Type checking cache
+.mypy_cache/
+
 # SQLite database
 db.sqlite3
 
@@ -11,3 +14,6 @@ db.sqlite3
 
 # Virtual environment
 venv/
+
+# macOS
+.DS_Store

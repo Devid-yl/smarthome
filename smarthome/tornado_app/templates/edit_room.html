@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier la pièce{% end %}
+
+{% block content %}
+<h2>Modifier la pièce</h2>
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% end %}
+<form method="post" class="form">
+    {% module xsrf_form_html() %}
+    <p>
+        <label>Nom de la pièce:</label>
+        <input type="text" name="name" value="{{ room.name }}" required>
+    </p>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="/houses" class="btn btn-secondary">Annuler</a>
+</form>
+{% end %}

@@ -2,40 +2,18 @@
 
 Application web simulant un système intelligent de domotique connectée. L’application SmartHome permettra de surveiller et piloter à distance différents équipements d’une maison (volets, portes, lumières, sonorisation), en fonction des conditions météorologiques, de la présence des occupants et de règles automatiques prédéfinies. 
 
----
 
 ## Table des matières
 
-- [Fonctionnalités](#fonctionnalités)  
-- [Technologies utilisées](#technologies-utilisées)  
-- [Installation](#installation)  
-- [Configuration](#configuration)  
-- [Utilisation](#utilisation)  
-- [Contribuer](#contribuer)  
-- [Licence](#licence)  
 
----
 
 ## Fonctionnalités
 
-- Gestion multi-utilisateurs et authentification sécurisée  
-- Gestion des maisons, pièces, capteurs et équipements  
-- Création et exécution de scénarios d’automatisation  
-- API REST pour la récupération et modification des données  
-- Notifications et mises à jour en temps réel via WebSockets  
-- Intégration optionnelle avec les API météo  
 
----
 
 ## Technologies utilisées
 
-- **Backend :** Python (Django)  
-- **Frontend :** HTML, CSS, JavaScript  
-- **Base de données :** PostgreSQL
-- **Communication temps réel :** WebSocket  
-- **Gestion de version :** Git / GitHub  
 
----
 
 ## Installation
 
@@ -67,39 +45,95 @@ python manage.py migrate
 python manage.py runserver
 ```
 
----
 
 ## Configuration
 
 Fichier de configuration principal : settings.py
 
 Variables importantes :
-- DATABASE_URL : URL de connexion à la base de données
-- SECRET_KEY : clé secrète pour Django
-- DEBUG : activer/désactiver le mode debug
   
----
 
 ## Utilisation
 
-- Accéder à l’interface web via http://127.0.0.1:8000/
-- Créer des utilisateurs, maisons et équipements
-- Définir des scénarios d’automatisation
-- Consulter les données en temps réel
   
----
 
 ## Contribuer
 
-- Fork le projet
-- Créez une branche : git checkout -b feature/ma-fonctionnalité
-- Committez vos changements : git commit -m "Description de la fonctionnalité"
-- Poussez la branche : git push origin feature/ma-fonctionnalité
-- Ouvrez une Pull Request
   
----
 
 ## Licence
 
 ...
+
+# SmartHome (Tornado-only)
+
+Cette version du projet SmartHome utilise uniquement **Tornado** (Django a été retiré).
+
+Consultez la documentation complète ci-dessous pour l'architecture, l'installation, les routes et le déploiement.
+
+## Architecture
+
+### Stack technique
+- Framework web: Tornado (asynchrone)
+- Base de données: PostgreSQL (mêmes variables d'env que l'ancienne app Django)
+- ORM: SQLAlchemy (async, asyncpg)
+- Templates: Tornado templates
+- Auth: cookies sécurisés + hachage compatible Django (PBKDF2-SHA256)
+
+### Structure
+```
+smarthome/
+	tornado_app/
+		app.py
+		config.py
+		database.py
+		models.py
+		auth.py
+		handlers/
+			home.py
+			accounts.py
+			houses.py
+		templates/
+			base.html
+			home.html
+			login.html
+			register.html
+			house_list.html
+			add_house.html
+			add_room.html
+static/
+media/
+.env
+```
+
+## Installation
+
+1) Activez votre venv, installez les dépendances:
+```bash
+pip install -r requirements.txt
+```
+
+2) Configurez `.env` (exemple):
+```env
+DB_NAME=your_db_name
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_HOST=localhost
+DB_PORT=5432
+DEBUG=True
+COOKIE_SECRET=change_me
+PORT=8001
+```
+
+## Lancer
+```bash
+python -m smarthome.tornado_app.app
+```
+
+Ouvrez http://127.0.0.1:8001
+
+## Notes
+- Les fichiers et dossiers Django ont été supprimés.
+- La DB est la même que précédemment (mêmes tables).
+- Les fichiers statiques sont servis depuis `static/`, les médias depuis `media/`.
 
