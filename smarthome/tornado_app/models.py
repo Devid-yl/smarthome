@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, relationship
 from datetime import datetime
 
@@ -7,6 +8,23 @@ class Base(DeclarativeBase):
     pass
 
 
+class House(Base):
+    """House model."""
+    __tablename__ = "houses"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    address = Column(String(255), nullable=True)
+    length = Column(Integer, nullable=False)
+    width = Column(Integer, nullable=False)
+    grid = Column(JSONB, nullable=False)
+
+    user = relationship("User", back_populates="houses")
+    rooms = relationship("Room", back_populates="house")
+
+
+# 1
 class User(Base):
     """User model - clean Tornado version (no Django leftovers)."""
     __tablename__ = "users"
@@ -23,19 +41,7 @@ class User(Base):
     houses = relationship("House", back_populates="user")
 
 
-class House(Base):
-    """House model."""
-    __tablename__ = "houses"
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    name = Column(String(100), nullable=False)
-    address = Column(String(255), nullable=True)
-
-    user = relationship("User", back_populates="houses")
-    rooms = relationship("Room", back_populates="house")
-
-
+# 2
 class Room(Base):
     """Room model."""
     __tablename__ = "rooms"
@@ -45,3 +51,18 @@ class Room(Base):
     name = Column(String(100), nullable=False)
 
     house = relationship("House", back_populates="rooms")
+
+
+# 3
+# class Equipment(Base):
+#     """Equipment model."""
+#     __tablename__ = "equipments"
+
+#     id = Column(Integer, primary_key=True)
+#     room_id = Column(Integer, ForeignKey("rooms.id"), nullable=False)
+#     name = Column(String(100), nullable=False)
+#     type = Column(String(50), nullable=False)
+
+#     room = relationship("Room", back_populates="equipments")
+
+

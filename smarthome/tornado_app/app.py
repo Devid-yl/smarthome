@@ -7,7 +7,8 @@ from .handlers.accounts import RegisterHandler, LoginHandler, LogoutHandler
 from .handlers.houses import (
     HouseListHandler, AddHouseHandler, AddRoomHandler,
     EditHouseHandler, DeleteHouseHandler,
-    EditRoomHandler, DeleteRoomHandler
+    EditRoomHandler, DeleteRoomHandler,
+    EditHouseInsideHandler, CancelEditHouseInsideHandler
 )
 from .handlers.profile import (
     ProfileHandler, EditProfileHandler, DeleteProfileHandler
@@ -31,7 +32,9 @@ def make_app():
         (r"/houses", HouseListHandler),
         (r"/houses/add", AddHouseHandler),
         (r"/houses/add_room", AddRoomHandler),
+        (r"/houses/edit_inside/([0-9]+)", EditHouseInsideHandler),
         (r"/houses/edit/([0-9]+)", EditHouseHandler),
+        (r"/houses/edit/([0-9]+)/cancel", CancelEditHouseInsideHandler),
         (r"/houses/delete/([0-9]+)", DeleteHouseHandler),
         (r"/rooms/edit/([0-9]+)", EditRoomHandler),
         (r"/rooms/delete/([0-9]+)", DeleteRoomHandler),

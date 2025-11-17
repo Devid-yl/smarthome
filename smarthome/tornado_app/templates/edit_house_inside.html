@@ -1,0 +1,513 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier intérieur - {{ house.name }}{% end %}
+
+{% block content %}
+<h2>Modifier l'intérieur de {{ house.name }}</h2>
+<p>Glissez-déposez les pièces sur la grille ({{ house.length }}x{{ house.width }})</p>
+
+{% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% end %}
+
+<div class="grid-editor">
+    <!-- Liste des pièces disponibles -->
+    <div class="rooms-panel">
+        <h3>Pièces disponibles</h3>
+        <p class="hint">💡 Cliquez sur une pièce, puis sur plusieurs cases pour l'étendre</p>
+        <div id="available-rooms">
+            {% for room in house.rooms %}
+                <div class="room-item" data-room-id="{{ room.id }}" data-room-name="{{ room.name }}">
+                    🚪 {{ room.name }}
+                    <span class="room-size" id="size-{{ room.id }}">0 cases</span>
+                </div>
+            {% end %}
+        </div>
+        <div class="legend">
+            <h4>Légende:</h4>
+            <p>🟦 = Pièce (2xxx)</p>
+            <p>⬜ = Vide (0)</p>
+            <p><strong>Mode peinture:</strong> Cliquez sur une pièce puis peignez plusieurs cases</p>
+        </div>
+    </div>
+
+    <!-- Grille de la maison -->
+    <div class="grid-container">
+        <div id="house-grid" style="
+            display: grid;
+            grid-template-columns: repeat({{ house.width }}, 40px);
+            grid-template-rows: repeat({{ house.length }}, 40px);
+            gap: 1px;
+            background: #ccc;
+            border: 2px solid #333;
+        ">
+            <!-- Génération dynamique de la grille via JavaScript -->
+        </div>
+        
+        <div class="grid-controls">
+            <button type="button" class="btn btn-secondary" onclick="clearGrid()">🗑️ Effacer la grille</button>
+            <button type="button" class="btn btn-warning" onclick="removeSelectedRoom()">❌ Retirer pièce sélectionnée</button>
+        </div>
+    </div>
+</div>
+
+<!-- Formulaire caché pour envoyer la grille -->
+<form method="post" id="grid-form">
+    {% module xsrf_form_html() %}
+    <input type="hidden" name="grid" id="grid-data">
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">✅ Valider et continuer</button>
+        <a href="/houses" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+
+<style>
+.grid-editor {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.rooms-panel {
+    min-width: 250px;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.room-item {
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    background: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.room-item:hover {
+    background: #0056b3;
+}
+
+.room-item.active {
+    background: #ffc107;
+    color: #333;
+    font-weight: bold;
+}
+
+.room-size {
+    font-size: 0.8rem;
+    background: rgba(0,0,0,0.2);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+}
+
+.hint {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.grid-container {
+    flex: 1;
+}
+
+.grid-cell {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.grid-cell:hover {
+    background: #f0f0f0;
+}
+
+.grid-cell.occupied {
+    background: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+.grid-cell.selected {
+    outline: 3px solid #ffc107;
+    outline-offset: -3px;
+}
+
+.grid-controls {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.legend {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 4px;
+}
+
+.legend h4 {
+    margin-top: 0;
+}
+
+.legend p {
+    margin: 0.5rem 0;
+}
+</style>
+
+<script>
+// Données de la maison
+const houseLength = {{ house.length }};
+const houseWidth = {{ house.width }};
+const existingGrid = {{ house.grid }};
+const rooms = [
+    {% for room in house.rooms %}
+    { id: {{ room.id }}, name: "{{ room.name }}" },
+    {% end %}
+];
+
+// État de la grille (matrice 2D)
+let grid = [];
+let selectedRoom = null;
+let selectedCells = [];
+let isPainting = false;
+let paintMode = 'add'; // 'add' ou 'remove'
+
+// Initialiser la grille
+function initGrid() {
+    // Copier la grille existante ou créer une nouvelle
+    if (existingGrid && existingGrid.length === houseLength) {
+        grid = JSON.parse(JSON.stringify(existingGrid));
+    } else {
+        grid = Array(houseLength).fill(0).map(() => Array(houseWidth).fill(0));
+    }
+    renderGrid();
+    updateRoomSizes();
+}
+
+// Afficher la grille
+function renderGrid() {
+    const gridElement = document.getElementById('house-grid');
+    gridElement.innerHTML = '';
+    
+    for (let i = 0; i < houseLength; i++) {
+        for (let j = 0; j < houseWidth; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.dataset.row = i;
+            cell.dataset.col = j;
+            
+            const value = grid[i][j];
+            if (value !== 0) {
+                cell.classList.add('occupied');
+                // Afficher le nom de la pièce au lieu du code
+                const roomId = value - 2000;
+                const room = rooms.find(r => r.id === roomId);
+                cell.textContent = room ? room.name.substring(0, 3) : value;
+                cell.title = room ? room.name : value;
+            }
+            
+            // Événements pour le mode peinture
+            cell.addEventListener('mousedown', (e) => handleMouseDown(e, i, j));
+            cell.addEventListener('mouseenter', () => handleMouseEnter(i, j));
+            cell.addEventListener('mouseup', () => handleMouseUp());
+            
+            gridElement.appendChild(cell);
+        }
+    }
+    
+    // Événement global pour arrêter la peinture
+    document.addEventListener('mouseup', () => {
+        isPainting = false;
+    });
+}
+
+// Gestion du mode peinture
+function handleMouseDown(e, row, col) {
+    e.preventDefault();
+    
+    if (!selectedRoom) {
+        // Mode sélection: sélectionner la pièce cliquée
+        const value = grid[row][col];
+        if (value !== 0) {
+            selectRoomFromCell(value);
+        }
+        return;
+    }
+    
+    isPainting = true;
+    const value = grid[row][col];
+    
+    if (value === 0) {
+        paintMode = 'add';
+        paintCell(row, col);
+    } else if (value === 2000 + selectedRoom.id) {
+        paintMode = 'remove';
+        unpaintCell(row, col);
+    }
+}
+
+function handleMouseEnter(row, col) {
+    if (!isPainting || !selectedRoom) return;
+    
+    if (paintMode === 'add' && grid[row][col] === 0) {
+        paintCell(row, col);
+    } else if (paintMode === 'remove' && grid[row][col] === 2000 + selectedRoom.id) {
+        unpaintCell(row, col);
+    }
+}
+
+function handleMouseUp() {
+    isPainting = false;
+    updateRoomSizes();
+}
+
+function paintCell(row, col) {
+    const roomCode = 2000 + selectedRoom.id;
+    grid[row][col] = roomCode;
+    
+    // Mise à jour visuelle immédiate
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    if (cell) {
+        cell.classList.add('occupied');
+        cell.textContent = selectedRoom.name.substring(0, 3);
+        cell.title = selectedRoom.name;
+    }
+}
+
+function unpaintCell(row, col) {
+    grid[row][col] = 0;
+    
+    // Mise à jour visuelle immédiate
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    if (cell) {
+        cell.classList.remove('occupied');
+        cell.textContent = '';
+        cell.title = '';
+    }
+}
+
+// Sélectionner toutes les cellules d'une pièce depuis la grille
+function selectRoomFromCell(roomCode) {
+    selectedCells = [];
+    const cells = document.querySelectorAll('.grid-cell');
+    
+    cells.forEach(cell => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        
+        if (grid[row][col] === roomCode) {
+            cell.classList.add('selected');
+            selectedCells.push({row, col});
+        } else {
+            cell.classList.remove('selected');
+        }
+    });
+    
+    // Mettre à jour la sélection dans le panneau
+    const roomId = roomCode - 2000;
+    selectRoomFromPanel(roomId);
+}
+
+// Retirer la pièce sélectionnée
+function removeSelectedRoom() {
+    if (selectedCells.length === 0) {
+        alert('Aucune pièce sélectionnée. Cliquez sur une pièce dans la grille d\'abord.');
+        return;
+    }
+    
+    if (!confirm(`Retirer toutes les ${selectedCells.length} cases de cette pièce ?`)) {
+        return;
+    }
+    
+    selectedCells.forEach(({row, col}) => {
+        grid[row][col] = 0;
+    });
+    
+    selectedCells = [];
+    selectedRoom = null;
+    renderGrid();
+    updateRoomSizes();
+    
+    // Désélectionner dans le panneau
+    document.querySelectorAll('.room-item').forEach(item => {
+        item.classList.remove('active');
+    });
+}
+
+// Mettre à jour le compteur de cases par pièce
+function updateRoomSizes() {
+    const roomSizes = {};
+    
+    // Compter les cases pour chaque pièce
+    for (let i = 0; i < houseLength; i++) {
+        for (let j = 0; j < houseWidth; j++) {
+            const value = grid[i][j];
+            if (value >= 2000 && value < 3000) {
+                const roomId = value - 2000;
+                roomSizes[roomId] = (roomSizes[roomId] || 0) + 1;
+            }
+        }
+    }
+    
+    // Mettre à jour l'affichage
+    rooms.forEach(room => {
+        const sizeElement = document.getElementById(`size-${room.id}`);
+        const count = roomSizes[room.id] || 0;
+        if (sizeElement) {
+            sizeElement.textContent = `${count} case${count !== 1 ? 's' : ''}`;
+        }
+    });
+}
+
+// Sélectionner une pièce depuis le panneau
+function selectRoomFromPanel(roomId) {
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+    
+    selectedRoom = room;
+    selectedCells = [];
+    
+    // Mettre à jour l'UI du panneau
+    document.querySelectorAll('.room-item').forEach(item => {
+        item.classList.remove('active');
+        if (parseInt(item.dataset.roomId) === roomId) {
+            item.classList.add('active');
+        }
+    });
+    
+    // Désélectionner les cellules de la grille
+    document.querySelectorAll('.grid-cell').forEach(cell => {
+        cell.classList.remove('selected');
+    });
+}
+
+// Gérer les clics sur le panneau des pièces
+document.getElementById('available-rooms').addEventListener('click', (e) => {
+    const roomItem = e.target.closest('.room-item');
+    if (roomItem) {
+        const roomId = parseInt(roomItem.dataset.roomId);
+        selectRoomFromPanel(roomId);
+    }
+});
+
+// Effacer la grille
+function clearGrid() {
+    if (confirm('Êtes-vous sûr de vouloir effacer toute la grille ?')) {
+        grid = Array(houseLength).fill(0).map(() => Array(houseWidth).fill(0));
+        selectedCells = [];
+        renderGrid();
+        updateRoomAvailability();
+    }
+}
+
+// Validation : vérifier que toutes les cases d'une pièce sont connectées
+function validateConnectivity() {
+    const errors = [];
+    const checkedRooms = new Set();
+    
+    for (let i = 0; i < houseLength; i++) {
+        for (let j = 0; j < houseWidth; j++) {
+            const value = grid[i][j];
+            if (value >= 2000 && value < 3000 && !checkedRooms.has(value)) {
+                checkedRooms.add(value);
+                
+                // Trouver toutes les cases de cette pièce
+                const roomCells = [];
+                for (let row = 0; row < houseLength; row++) {
+                    for (let col = 0; col < houseWidth; col++) {
+                        if (grid[row][col] === value) {
+                            roomCells.push({row, col});
+                        }
+                    }
+                }
+                
+                // Vérifier que toutes les cases sont connectées
+                if (!areAllCellsConnected(roomCells)) {
+                    const roomId = value - 2000;
+                    const room = rooms.find(r => r.id === roomId);
+                    errors.push(`❌ ${room ? room.name : 'Pièce ' + roomId} : cases non adjacentes (trous détectés)`);
+                }
+            }
+        }
+    }
+    
+    return errors;
+}
+
+// Algorithme BFS pour vérifier la connectivité
+function areAllCellsConnected(cells) {
+    if (cells.length === 0) return true;
+    if (cells.length === 1) return true;
+    
+    const visited = new Set();
+    const queue = [cells[0]];
+    visited.add(`${cells[0].row},${cells[0].col}`);
+    
+    // Parcours en largeur (BFS)
+    while (queue.length > 0) {
+        const current = queue.shift();
+        
+        // Vérifier les 4 voisins (haut, bas, gauche, droite)
+        const neighbors = [
+            {row: current.row - 1, col: current.col}, // haut
+            {row: current.row + 1, col: current.col}, // bas
+            {row: current.row, col: current.col - 1}, // gauche
+            {row: current.row, col: current.col + 1}  // droite
+        ];
+        
+        neighbors.forEach(neighbor => {
+            const key = `${neighbor.row},${neighbor.col}`;
+            if (!visited.has(key)) {
+                // Vérifier si ce voisin fait partie de la pièce
+                const inCells = cells.find(c => c.row === neighbor.row && c.col === neighbor.col);
+                if (inCells) {
+                    visited.add(key);
+                    queue.push(neighbor);
+                }
+            }
+        });
+    }
+    
+    // Toutes les cases ont été visitées ?
+    return visited.size === cells.length;
+}
+
+// Soumettre le formulaire avec validation
+document.getElementById('grid-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    // Valider la connectivité
+    const errors = validateConnectivity();
+    
+    if (errors.length > 0) {
+        alert('⚠️ Erreurs détectées :\n\n' + errors.join('\n') + '\n\n❗ Corrigez ces erreurs avant de continuer.');
+        return;
+    }
+    
+    // Tout est OK, soumettre
+    document.getElementById('grid-data').value = JSON.stringify(grid);
+    e.target.submit();
+});
+
+// Initialiser au chargement
+initGrid();
+</script>
+
+{% end %}

@@ -7,6 +7,16 @@
 {% if error %}
     <p style="color: red;">{{ error }}</p>
 {% end %}
+
+{% if has_temp_grid %}
+    <div class="alert alert-warning">
+        ⚠️ <strong>Modifications en attente !</strong> 
+        Vous avez modifié l'intérieur de la maison. 
+        Cliquez sur <strong>"Enregistrer"</strong> pour valider définitivement 
+        ou <strong>"Annuler"</strong> pour abandonner ces modifications.
+    </div>
+{% end %}
+
 <form method="post" class="form">
     {% module xsrf_form_html() %}
     <p>
@@ -17,7 +27,26 @@
         <label>Adresse:</label>
         <input type="text" name="address" value="{{ house.address if house.address else '' }}">
     </p>
-    <button type="submit" class="btn btn-primary">Enregistrer</button>
-    <a href="/houses" class="btn btn-secondary">Annuler</a>
+    <a href="/houses/edit_inside/{{ house.id }}" class="btn btn-primary">Modifier intérieur</a>
+    <button type="submit" class="btn btn-primary">✅ Enregistrer</button>
+    {% if has_temp_grid %}
+        <a href="/houses/edit/{{ house.id }}/cancel" class="btn btn-danger">❌ Annuler modifications intérieur</a>
+    {% end %}
+    <a href="/houses" class="btn btn-secondary">← Retour</a>
 </form>
+
+<style>
+.alert {
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border-left-color: #ffc107;
+    color: #856404;
+}
+</style>
 {% end %}
