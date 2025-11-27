@@ -1,19 +1,89 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Type checking cache
+# Type checking
 .mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
 
-# SQLite database
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Database
 db.sqlite3
+*.db
 
-# Environment variables
+# Environment
 .env
+.env.local
+.env.*.local
 
-# Virtual environment
+# Virtual environments
 venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+eula1033.txt
+NTUSER.DAT*
+ntuser.*
+
+# Logs
+*.log
+server.log
+logs/
+
+# Media uploads (optionnel - à retirer si tu veux versionner les images)
+media/profile_images/*
+!media/profile_images/.gitkeep
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Documentation builds
+docs/_build/
+
+# Backup files
+*.bak
+*.backup
+*.old

@@ -1,0 +1,344 @@
+/* Grid Editor Styles (edit_house_inside.html) */
+
+.grid-editor {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.rooms-panel {
+    min-width: 300px;
+    padding: 0;
+    background: #f5f5f5;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Tabs */
+.tabs-container {
+    display: flex;
+    background: #e0e0e0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.tab-btn.active {
+    background: #f5f5f5;
+    color: #007bff;
+    border-bottom: 3px solid #007bff;
+}
+
+.tab-panel {
+    display: none;
+    padding: 1rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* Instruction Box */
+.instruction-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 13px;
+    line-height: 1.6;
+    animation: slideIn 0.3s ease;
+}
+
+.instruction-box strong {
+    font-size: 14px;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Room/Sensor/Equipment Items */
+.room-item,
+.sensor-item,
+.equipment-item {
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    background: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.room-item:hover,
+.sensor-item:hover,
+.equipment-item:hover {
+    background: #0056b3;
+    transform: translateX(5px);
+}
+
+.sensor-item {
+    background: #28a745;
+}
+
+.sensor-item:hover {
+    background: #1e7e34;
+}
+
+.equipment-item {
+    background: #ffc107;
+    color: #333;
+}
+
+.equipment-item:hover {
+    background: #e0a800;
+}
+
+.room-item.selected,
+.sensor-item.selected,
+.equipment-item.selected {
+    outline: 3px solid white;
+    outline-offset: 2px;
+    transform: scale(1.05);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1.05);
+    }
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+.room-size,
+.coverage-count {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+}
+
+/* Paint Tools */
+.paint-tools {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    display: none;
+}
+
+.paint-tools.active {
+    display: block;
+    animation: slideIn 0.3s ease;
+}
+
+.paint-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-paint {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-paint-add {
+    background: #d4edda;
+    color: #155724;
+}
+
+.btn-paint-add:hover {
+    background: #c3e6cb;
+}
+
+.btn-paint-add.active {
+    background: #28a745;
+    color: white;
+    border-color: #1e7e34;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-paint-remove {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.btn-paint-remove:hover {
+    background: #f5c6cb;
+}
+
+.btn-paint-remove.active {
+    background: #dc3545;
+    color: white;
+    border-color: #bd2130;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-clear {
+    width: 100%;
+    padding: 0.5rem;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-clear:hover {
+    background: #5a6268;
+}
+
+/* Grid Container */
+.grid-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#house-grid {
+    background: #ccc;
+    border: 2px solid #333;
+    margin-bottom: 1rem;
+}
+
+.grid-cell {
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    position: relative;
+    transition: all 0.1s;
+}
+
+.grid-cell.wall {
+    background: #e0e0e0;
+}
+
+.grid-cell.empty {
+    background: white;
+}
+
+.grid-cell.room {
+    background: lightblue;
+}
+
+.grid-cell:not(.wall):hover {
+    outline: 2px solid #007bff;
+    cursor: crosshair;
+}
+
+.grid-cell.painting {
+    cursor: crosshair;
+}
+
+/* Sensor/Equipment Overlays */
+.sensor-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px dashed #28a745;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.equipment-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px dashed #ffc107;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.cell-icons {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    justify-content: center;
+    font-size: 12px;
+}
+
+/* Grid Controls */
+.grid-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.grid-controls .btn {
+    padding: 0.5rem 1rem;
+}
+
+/* Legend */
+.legend {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.legend h4 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.legend p {
+    margin: 0.25rem 0;
+    color: #666;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.form-actions .btn {
+    padding: 0.75rem 2rem;
+    font-size: 16px;
+}

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membres - SmartHome</title>
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        .navbar {
+            background: #007bff;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        
+        .header { 
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn { 
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-secondary { background: #6c757d; color: white; }
+        
+        .members-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-admin { background: #ffc107; color: #333; }
+        .badge-occupant { background: #17a2b8; color: white; }
+        .badge-owner { background: #dc3545; color: white; }
+        .badge-pending { background: #6c757d; color: white; }
+        .badge-accepted { background: #28a745; color: white; }
+        .badge-rejected { background: #dc3545; color: white; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            max-width: 500px;
+            width: 90%;
+            padding: 30px;
+            border-radius: 10px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .search-results.show {
+            display: block;
+        }
+        
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .search-result-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>👥 Membres - <span id="house-name">Maison</span></h1>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="goToHouse()">← Retour à la maison</button>
+            <button class="btn btn-danger" onclick="goBack()">← Dashboard</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h2>Gestion des membres</h2>
+                <p>Invitez des utilisateurs à rejoindre votre maison</p>
+            </div>
+            <button class="btn btn-success" onclick="showInviteModal()">
+                ➕ Inviter un membre
+            </button>
+        </div>
+
+        <div class="members-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Invité par</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="members-tbody">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div>Chargement...</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal d'invitation -->
+    <div id="invite-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Inviter un membre</h3>
+            
+            <div class="form-group">
+                <label for="search-username">Rechercher un utilisateur</label>
+                <input type="text" id="search-username" placeholder="Tapez un nom d'utilisateur..." autocomplete="off">
+                <div id="search-results" class="search-results"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="invite-role">Rôle</label>
+                <select id="invite-role">
+                    <option value="occupant">Occupant</option>
+                    <option value="administrateur">Administrateur</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeInviteModal()">Annuler</button>
+                <button class="btn btn-success" onclick="sendInvitation()" id="invite-btn" disabled>
+                    Envoyer l'invitation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de changement de rôle -->
+    <div id="role-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Modifier le rôle</h3>
+            
+            <div class="form-group">
+                <label for="new-role">Nouveau rôle pour <strong id="role-username"></strong></label>
+                <select id="new-role">
+                    <option value="occupant">Occupant</option>
+                    <option value="administrateur">Administrateur</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeRoleModal()">Annuler</button>
+                <button class="btn btn-primary" onclick="changeRole()">Modifier</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let houseId = null;
+        let currentUser = null;
+        let members = [];
+        let selectedUserId = null;
+        let selectedMemberId = null;
+        let searchTimeout = null;
+
+        async function init() {
+            // Récupérer l'ID de la maison depuis l'URL
+            const params = new URLSearchParams(window.location.search);
+            houseId = params.get('id');
+            
+            if (!houseId) {
+                alert('Aucune maison sélectionnée');
+                window.location.href = '/app/dashboard.html';
+                return;
+            }
+
+            // Charger les infos utilisateur
+            await loadCurrentUser();
+            
+            // Charger la maison et les membres
+            await loadHouse();
+            await loadMembers();
+        }
+
+        async function loadCurrentUser() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    currentUser = await response.json();
+                } else {
+                    window.location.href = '/app/login.html';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function loadHouse() {
+            try {
+                const response = await fetch(`/api/houses/${houseId}`);
+                if (response.ok) {
+                    const house = await response.json();
+                    document.getElementById('house-name').textContent = house.name;
+                    document.title = `Membres - ${house.name}`;
+                } else {
+                    alert('Maison non trouvée');
+                    window.location.href = '/app/dashboard.html';
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        async function loadMembers() {
+            try {
+                const response = await fetch(`/api/houses/${houseId}/members`);
+                if (response.ok) {
+                    const data = await response.json();
+                    members = data.members;
+                    displayMembers();
+                } else {
+                    console.error('Erreur lors du chargement des membres');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        function displayMembers() {
+            const tbody = document.getElementById('members-tbody');
+            
+            if (members.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div style="font-size: 48px; margin-bottom: 10px;">👥</div>
+                                <div>Aucun membre pour le moment</div>
+                                <div style="font-size: 14px; margin-top: 5px;">Invitez des utilisateurs à rejoindre votre maison</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = members.map(member => {
+                const roleBadge = member.role === 'administrateur' 
+                    ? '<span class="badge badge-admin">Administrateur</span>'
+                    : '<span class="badge badge-occupant">Occupant</span>';
+                
+                let statusBadge = '';
+                if (member.status === 'pending') {
+                    statusBadge = '<span class="badge badge-pending">En attente</span>';
+                } else if (member.status === 'accepted') {
+                    statusBadge = '<span class="badge badge-accepted">Accepté</span>';
+                } else if (member.status === 'rejected') {
+                    statusBadge = '<span class="badge badge-rejected">Refusé</span>';
+                }
+
+                const date = new Date(member.invited_at).toLocaleDateString('fr-FR');
+                
+                let actions = '';
+                if (member.status === 'accepted') {
+                    actions = `
+                        <div class="actions">
+                            <button class="btn btn-warning" onclick="showRoleModal(${member.id}, '${member.username}', '${member.role}')" style="padding: 5px 10px; font-size: 12px;">
+                                Changer rôle
+                            </button>
+                            <button class="btn btn-danger" onclick="removeMember(${member.id}, '${member.username}')" style="padding: 5px 10px; font-size: 12px;">
+                                Retirer
+                            </button>
+                        </div>
+                    `;
+                } else if (member.status === 'pending') {
+                    actions = `
+                        <button class="btn btn-danger" onclick="removeMember(${member.id}, '${member.username}')" style="padding: 5px 10px; font-size: 12px;">
+                            Annuler
+                        </button>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${member.username}</strong><br><small>${member.email}</small></td>
+                        <td>${roleBadge}</td>
+                        <td>${statusBadge}</td>
+                        <td>${member.inviter_username || '-'}</td>
+                        <td>${date}</td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showInviteModal() {
+            document.getElementById('invite-modal').classList.add('show');
+            document.getElementById('search-username').value = '';
+            document.getElementById('search-results').innerHTML = '';
+            document.getElementById('search-results').classList.remove('show');
+            selectedUserId = null;
+            document.getElementById('invite-btn').disabled = true;
+        }
+
+        function closeInviteModal() {
+            document.getElementById('invite-modal').classList.remove('show');
+        }
+
+        // Recherche d'utilisateurs avec debounce
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-username');
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                
+                if (query.length < 2) {
+                    document.getElementById('search-results').classList.remove('show');
+                    return;
+                }
+                
+                searchTimeout = setTimeout(() => searchUsers(query), 300);
+            });
+        });
+
+        async function searchUsers(query) {
+            try {
+                const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=10`);
+                if (response.ok) {
+                    const data = await response.json();
+                    displaySearchResults(data.users);
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        function displaySearchResults(users) {
+            const resultsDiv = document.getElementById('search-results');
+            
+            if (users.length === 0) {
+                resultsDiv.innerHTML = '<div style="padding: 10px; text-align: center; color: #999;">Aucun utilisateur trouvé</div>';
+                resultsDiv.classList.add('show');
+                return;
+            }
+
+            resultsDiv.innerHTML = users.map(user => `
+                <div class="search-result-item" onclick="selectUser(${user.id}, '${user.username}')">
+                    <strong>${user.username}</strong>
+                </div>
+            `).join('');
+            resultsDiv.classList.add('show');
+        }
+
+        function selectUser(userId, username) {
+            selectedUserId = userId;
+            document.getElementById('search-username').value = username;
+            document.getElementById('search-results').classList.remove('show');
+            document.getElementById('invite-btn').disabled = false;
+        }
+
+        async function sendInvitation() {
+            if (!selectedUserId) return;
+
+            const role = document.getElementById('invite-role').value;
+            const username = document.getElementById('search-username').value;
+
+            try {
+                const response = await fetch(`/api/houses/${houseId}/members`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Invitation envoyée avec succès !');
+                    closeInviteModal();
+                    await loadMembers();
+                } else {
+                    alert(data.error || 'Erreur lors de l\'invitation');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de l\'invitation');
+            }
+        }
+
+        function showRoleModal(memberId, username, currentRole) {
+            selectedMemberId = memberId;
+            document.getElementById('role-username').textContent = username;
+            document.getElementById('new-role').value = currentRole;
+            document.getElementById('role-modal').classList.add('show');
+        }
+
+        function closeRoleModal() {
+            document.getElementById('role-modal').classList.remove('show');
+        }
+
+        async function changeRole() {
+            if (!selectedMemberId) return;
+
+            const newRole = document.getElementById('new-role').value;
+
+            try {
+                const response = await fetch(`/api/houses/${houseId}/members/${selectedMemberId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: newRole })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Rôle modifié avec succès !');
+                    closeRoleModal();
+                    await loadMembers();
+                } else {
+                    alert(data.error || 'Erreur lors de la modification');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la modification');
+            }
+        }
+
+        async function removeMember(memberId, username) {
+            if (!confirm(`Êtes-vous sûr de vouloir retirer ${username} ?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/houses/${houseId}/members/${memberId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Membre retiré avec succès !');
+                    await loadMembers();
+                } else {
+                    alert(data.error || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la suppression');
+            }
+        }
+
+        function goToHouse() {
+            window.location.href = `/app/house.html?id=${houseId}`;
+        }
+
+        function goBack() {
+            window.location.href = '/app/dashboard.html';
+        }
+
+        // Initialiser au chargement
+        init();
+    </script>
+</body>
+</html>

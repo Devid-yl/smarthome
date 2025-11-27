@@ -1,0 +1,635 @@
+"""
+API REST pour la gestion des maisons et des pièces
+"""
+import json
+import tornado.web
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+from ..models import House, Room, EventHistory
+from ..database import async_session_maker
+
+
+class BaseAPIHandler(tornado.web.RequestHandler):
+    """Base handler pour les API REST."""
+
+    def check_xsrf_cookie(self):
+        """Disable XSRF for REST APIs."""
+        pass
+
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Methods",
+                        "GET, POST, PUT, DELETE, OPTIONS")
+        self.set_header("Access-Control-Allow-Headers",
+                        "Content-Type, Authorization")
+
+    def options(self, *args):
+        self.set_status(204)
+        self.finish()
+
+    def get_current_user(self):
+        user_id = self.get_secure_cookie("uid")
+        if not user_id:
+            return None
+        username = self.get_secure_cookie("uname")
+        return {
+            "id": int(user_id.decode()),
+            "username": username.decode() if username else None
+        }
+
+    def write_json(self, data, status=200):
+        self.set_status(status)
+        self.write(json.dumps(data, default=str))
+
+    def write_error_json(self, message, status=400):
+        self.set_status(status)
+        self.write(json.dumps({"error": message}))
+
+
+class HousesAPIHandler(BaseAPIHandler):
+    """
+    GET /api/houses - Liste toutes les maisons de l'utilisateur
+    POST /api/houses - Créer une nouvelle maison
+    """
+
+    async def get(self):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        async with async_session_maker() as session:
+            from sqlalchemy import and_
+            from ..models import HouseMember
+            
+            # Récupérer les maisons dont l'utilisateur est propriétaire
+            owned_result = await session.execute(
+                select(House)
+                .where(House.user_id == current_user["id"])
+                .options(selectinload(House.rooms))
+            )
+            owned_houses = owned_result.scalars().all()
+
+            # Récupérer les maisons dont l'utilisateur est membre accepté
+            member_result = await session.execute(
+                select(HouseMember)
+                .where(
+                    and_(
+                        HouseMember.user_id == current_user["id"],
+                        HouseMember.status == 'accepted'
+                    )
+                )
+                .options(selectinload(HouseMember.house))
+            )
+            memberships = member_result.scalars().all()
+
+            houses_list = []
+            
+            # Ajouter les maisons possédées
+            for h in owned_houses:
+                houses_list.append({
+                    "id": h.id,
+                    "name": h.name,
+                    "address": h.address,
+                    "length": h.length,
+                    "width": h.width,
+                    "grid": h.grid,
+                    "role": "proprietaire",
+                    "is_owner": True,
+                    "rooms": [
+                        {
+                            "id": r.id,
+                            "name": r.name
+                        }
+                        for r in h.rooms
+                    ]
+                })
+
+            # Ajouter les maisons partagées
+            for membership in memberships:
+                if membership.house:
+                    # Charger les rooms
+                    await session.refresh(membership.house, ['rooms'])
+                    houses_list.append({
+                        "id": membership.house.id,
+                        "name": membership.house.name,
+                        "address": membership.house.address,
+                        "length": membership.house.length,
+                        "width": membership.house.width,
+                        "grid": membership.house.grid,
+                        "role": membership.role,
+                        "is_owner": False,
+                        "rooms": [
+                            {
+                                "id": r.id,
+                                "name": r.name
+                            }
+                            for r in membership.house.rooms
+                        ]
+                    })
+
+            self.write_json({
+                "houses": houses_list
+            })
+
+    async def post(self):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        try:
+            data = json.loads(self.request.body)
+        except json.JSONDecodeError:
+            return self.write_error_json("Invalid JSON", 400)
+
+        name = data.get("name", "").strip()
+        address = data.get("address", "").strip()
+        length = data.get("length")
+        width = data.get("width")
+
+        if not name:
+            return self.write_error_json("House name is required", 400)
+
+        # Valider les dimensions
+        try:
+            length = int(length) if length else 10
+            width = int(width) if width else 10
+            if length < 1 or width < 1 or length > 50 or width > 50:
+                raise ValueError
+        except (ValueError, TypeError):
+            return self.write_error_json(
+                "Length and width must be between 1 and 50", 400
+            )
+
+        async with async_session_maker() as session:
+            # Créer une grille avec un contour de murs automatique
+            # Grille réelle: (length+2) x (width+2) pour le contour
+            grid = []
+            for i in range(length + 2):
+                row = []
+                for j in range(width + 2):
+                    # Contour = mur (1), intérieur = vide (0)
+                    is_border = (
+                        i == 0 or i == length + 1 or
+                        j == 0 or j == width + 1
+                    )
+                    row.append(1 if is_border else 0)
+                grid.append(row)
+            
+            new_house = House(
+                user_id=current_user["id"],
+                name=name,
+                address=address or "",
+                length=length,
+                width=width,
+                grid=grid  # Grille avec contour de murs
+            )
+
+            session.add(new_house)
+            await session.commit()
+            await session.refresh(new_house)
+
+            # Enregistrer dans l'historique
+            event = EventHistory(
+                house_id=new_house.id,
+                user_id=current_user["id"],
+                event_type='house_modified',
+                entity_type='house',
+                entity_id=new_house.id,
+                description=f"Maison créée: {new_house.name}",
+                event_metadata={
+                    "action": "create",
+                    "dimensions": f"{length}x{width}",
+                    "address": address
+                },
+                ip_address=self.request.remote_ip
+            )
+            session.add(event)
+            await session.commit()
+
+            self.write_json({
+                "id": new_house.id,
+                "name": new_house.name,
+                "address": new_house.address,
+                "length": new_house.length,
+                "width": new_house.width,
+                "grid": new_house.grid,
+                "message": "House created successfully"
+            }, 201)
+
+
+class HouseDetailAPIHandler(BaseAPIHandler):
+    """
+    GET /api/houses/{id} - Détails d'une maison
+    PUT /api/houses/{id} - Modifier une maison
+    DELETE /api/houses/{id} - Supprimer une maison
+    """
+
+    async def get(self, house_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        async with async_session_maker() as session:
+            from ..utils.permissions import (
+                can_view_house, get_user_role_in_house
+            )
+            
+            house_id = int(house_id)
+            
+            # Vérifier les permissions de visualisation
+            if not await can_view_house(
+                session, current_user["id"], house_id
+            ):
+                return self.write_error_json("Access denied", 403)
+            
+            result = await session.execute(
+                select(House)
+                .where(House.id == house_id)
+                .options(selectinload(House.rooms))
+            )
+            house = result.scalar_one_or_none()
+
+            if not house:
+                return self.write_error_json("House not found", 404)
+
+            # Obtenir le rôle de l'utilisateur
+            user_role = await get_user_role_in_house(
+                session, current_user["id"], house_id
+            )
+
+            self.write_json({
+                "id": house.id,
+                "name": house.name,
+                "address": house.address,
+                "length": house.length,
+                "width": house.width,
+                "grid": house.grid,
+                "user_role": user_role,
+                "rooms": [
+                    {
+                        "id": r.id,
+                        "name": r.name,
+                        "house_id": r.house_id
+                    }
+                    for r in house.rooms
+                ]
+            })
+
+    async def put(self, house_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        try:
+            data = json.loads(self.request.body)
+        except json.JSONDecodeError:
+            return self.write_error_json("Invalid JSON", 400)
+
+        async with async_session_maker() as session:
+            from ..utils.permissions import can_manage_house
+            
+            house_id = int(house_id)
+            
+            # Vérifier les permissions de gestion
+            if not await can_manage_house(
+                session, current_user["id"], house_id
+            ):
+                return self.write_error_json("Access denied", 403)
+            
+            result = await session.execute(
+                select(House).where(House.id == house_id)
+            )
+            house = result.scalar_one_or_none()
+
+            if not house:
+                return self.write_error_json("House not found", 404)
+
+            # Suivre les changements
+            changes = {}
+
+            # Mettre à jour les champs
+            if "name" in data:
+                changes["name"] = {
+                    "old": house.name,
+                    "new": data["name"].strip()
+                }
+                house.name = data["name"].strip()
+            if "address" in data:
+                changes["address"] = {
+                    "old": house.address,
+                    "new": data["address"].strip()
+                }
+                house.address = data["address"].strip()
+            if "length" in data:
+                try:
+                    length = int(data["length"])
+                    if 1 <= length <= 50:
+                        changes["length"] = {
+                            "old": house.length,
+                            "new": length
+                        }
+                        house.length = length
+                except (ValueError, TypeError):
+                    pass
+            if "width" in data:
+                try:
+                    width = int(data["width"])
+                    if 1 <= width <= 50:
+                        changes["width"] = {
+                            "old": house.width,
+                            "new": width
+                        }
+                        house.width = width
+                except (ValueError, TypeError):
+                    pass
+            if "grid" in data:
+                house.grid = data["grid"]
+
+            await session.commit()
+            await session.refresh(house)
+
+            self.write_json({
+                "id": house.id,
+                "name": house.name,
+                "address": house.address,
+                "length": house.length,
+                "width": house.width,
+                "grid": house.grid,
+                "message": "House updated successfully"
+            })
+
+    async def delete(self, house_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        async with async_session_maker() as session:
+            try:
+                result = await session.execute(
+                    select(House).where(
+                        House.id == int(house_id),
+                        House.user_id == current_user["id"]
+                    )
+                )
+                house = result.scalar_one_or_none()
+
+                if not house:
+                    return self.write_error_json("House not found", 404)
+
+                # Les cascades supprimeront automatiquement:
+                # - automation_rules (ON DELETE CASCADE)
+                # - rooms et leurs sensors/equipments (cascade SQLAlchemy)
+                await session.delete(house)
+                await session.commit()
+
+                self.write_json({
+                    "message": "House deleted successfully"
+                })
+            except Exception as e:
+                await session.rollback()
+                print(f"Error deleting house: {e}")
+                return self.write_error_json(
+                    f"Cannot delete house: {str(e)}", 500
+                )
+
+
+class RoomsAPIHandler(BaseAPIHandler):
+    """
+    GET /api/houses/{house_id}/rooms - Liste les pièces d'une maison
+    POST /api/houses/{house_id}/rooms - Créer une pièce
+    """
+
+    async def get(self, house_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        async with async_session_maker() as session:
+            # Vérifier que la maison appartient à l'utilisateur
+            result = await session.execute(
+                select(House).where(
+                    House.id == int(house_id),
+                    House.user_id == current_user["id"]
+                )
+            )
+            house = result.scalar_one_or_none()
+
+            if not house:
+                return self.write_error_json("House not found", 404)
+
+            # Récupérer les pièces
+            result = await session.execute(
+                select(Room).where(Room.house_id == int(house_id))
+            )
+            rooms = result.scalars().all()
+
+            self.write_json({
+                "rooms": [
+                    {
+                        "id": r.id,
+                        "name": r.name,
+                        "house_id": r.house_id
+                    }
+                    for r in rooms
+                ]
+            })
+
+    async def post(self, house_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        try:
+            data = json.loads(self.request.body)
+        except json.JSONDecodeError:
+            return self.write_error_json("Invalid JSON", 400)
+
+        name = data.get("name", "").strip()
+        if not name:
+            return self.write_error_json("Room name is required", 400)
+
+        async with async_session_maker() as session:
+            # Vérifier que la maison appartient à l'utilisateur
+            result = await session.execute(
+                select(House).where(
+                    House.id == int(house_id),
+                    House.user_id == current_user["id"]
+                )
+            )
+            house = result.scalar_one_or_none()
+
+            if not house:
+                return self.write_error_json("House not found", 404)
+
+            # Créer la pièce
+            new_room = Room(
+                house_id=int(house_id),
+                name=name
+            )
+
+            session.add(new_room)
+            await session.commit()
+            await session.refresh(new_room)
+
+            # Enregistrer dans l'historique
+            event = EventHistory(
+                house_id=house.id,
+                user_id=current_user["id"],
+                event_type='house_modified',
+                entity_type='room',
+                entity_id=new_room.id,
+                description=f"Pièce ajoutée: {new_room.name}",
+                event_metadata={
+                    "action": "create",
+                    "room_name": new_room.name
+                },
+                ip_address=self.request.remote_ip
+            )
+            session.add(event)
+            await session.commit()
+
+            self.write_json({
+                "id": new_room.id,
+                "name": new_room.name,
+                "house_id": new_room.house_id,
+                "message": "Room created successfully"
+            }, 201)
+
+
+class RoomDetailAPIHandler(BaseAPIHandler):
+    """
+    GET /api/rooms/{id} - Détails d'une pièce
+    PUT /api/rooms/{id} - Modifier une pièce
+    DELETE /api/rooms/{id} - Supprimer une pièce
+    """
+
+    async def get(self, room_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Room)
+                .join(House)
+                .where(
+                    Room.id == int(room_id),
+                    House.user_id == current_user["id"]
+                )
+            )
+            room = result.scalar_one_or_none()
+
+            if not room:
+                return self.write_error_json("Room not found", 404)
+
+            self.write_json({
+                "id": room.id,
+                "name": room.name,
+                "house_id": room.house_id
+            })
+
+    async def put(self, room_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        try:
+            data = json.loads(self.request.body)
+        except json.JSONDecodeError:
+            return self.write_error_json("Invalid JSON", 400)
+
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Room)
+                .join(House)
+                .where(
+                    Room.id == int(room_id),
+                    House.user_id == current_user["id"]
+                )
+            )
+            room = result.scalar_one_or_none()
+
+            if not room:
+                return self.write_error_json("Room not found", 404)
+
+            # Suivre les changements
+            changes = {}
+            if "name" in data:
+                changes["name"] = {
+                    "old": room.name,
+                    "new": data["name"].strip()
+                }
+                room.name = data["name"].strip()
+
+            # Enregistrer dans l'historique si changements
+            if changes:
+                event = EventHistory(
+                    house_id=room.house_id,
+                    user_id=current_user["id"],
+                    event_type='house_modified',
+                    entity_type='room',
+                    entity_id=room.id,
+                    description=(
+                        f"Pièce renommée: {changes['name']['old']} → "
+                        f"{changes['name']['new']}"
+                    ),
+                    event_metadata={
+                        "action": "update",
+                        "changes": changes
+                    },
+                    ip_address=self.request.remote_ip
+                )
+                session.add(event)
+
+            await session.commit()
+            await session.refresh(room)
+
+            self.write_json({
+                "id": room.id,
+                "name": room.name,
+                "house_id": room.house_id,
+                "message": "Room updated successfully"
+            })
+
+    async def delete(self, room_id):
+        current_user = self.get_current_user()
+        if not current_user:
+            return self.write_error_json("Not authenticated", 401)
+
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Room)
+                .join(House)
+                .where(
+                    Room.id == int(room_id),
+                    House.user_id == current_user["id"]
+                )
+            )
+            room = result.scalar_one_or_none()
+
+            if not room:
+                return self.write_error_json("Room not found", 404)
+
+            # Enregistrer dans l'historique avant retrait
+            event = EventHistory(
+                house_id=room.house_id,
+                user_id=current_user["id"],
+                event_type='house_modified',
+                entity_type='room',
+                entity_id=room.id,
+                description=f"Pièce retirée: {room.name}",
+                event_metadata={
+                    "action": "delete",
+                    "room_name": room.name
+                },
+                ip_address=self.request.remote_ip
+            )
+            session.add(event)
+
+            await session.delete(room)
+            await session.commit()
+
+            self.write_json({
+                "message": "Room deleted successfully"
+            })

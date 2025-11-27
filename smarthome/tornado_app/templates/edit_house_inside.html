@@ -2,6 +2,10 @@
 
 {% block title %}Modifier intérieur - {{ house.name }}{% end %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/grid-editor.css">
+{% end %}
+
 {% block content %}
 <h2>Modifier l'intérieur de {{ house.name }}</h2>
 <p>Glissez-déposez les pièces sur la grille ({{ house.length }}x{{ house.width }})</p>
@@ -11,23 +15,88 @@
 {% end %}
 
 <div class="grid-editor">
-    <!-- Liste des pièces disponibles -->
+    <!-- Panneau latéral avec onglets -->
     <div class="rooms-panel">
-        <h3>Pièces disponibles</h3>
-        <p class="hint">💡 Cliquez sur une pièce, puis sur plusieurs cases pour l'étendre</p>
-        <div id="available-rooms">
-            {% for room in house.rooms %}
-                <div class="room-item" data-room-id="{{ room.id }}" data-room-name="{{ room.name }}">
-                    🚪 {{ room.name }}
-                    <span class="room-size" id="size-{{ room.id }}">0 cases</span>
-                </div>
-            {% end %}
+        <!-- Onglets -->
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('rooms', event)">🚪 Pièces</button>
+            <button class="tab-btn" onclick="switchTab('sensors', event)">🌡️ Capteurs</button>
+            <button class="tab-btn" onclick="switchTab('equipments', event)">⚙️ Équipements</button>
         </div>
-        <div class="legend">
-            <h4>Légende:</h4>
-            <p>🟦 = Pièce (2xxx)</p>
-            <p>⬜ = Vide (0)</p>
-            <p><strong>Mode peinture:</strong> Cliquez sur une pièce puis peignez plusieurs cases</p>
+
+        <!-- Contenu Pièces -->
+        <div id="tab-rooms" class="tab-panel active">
+            <div style="margin-bottom: 1rem;">
+                <button class="btn btn-success" onclick="showAddRoomModal()" style="width: 100%;">
+                    ➕ Ajouter une pièce
+                </button>
+            </div>
+            
+            <h3>🚪 Pièces disponibles</h3>
+            <div id="available-rooms">
+                {% for room in house.rooms %}
+                    <div class="room-item" data-room-id="{{ room.id }}" data-room-name="{{ room.name }}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span>🚪 {{ room.name }}</span>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <span class="room-size" id="size-{{ room.id }}">0 cases</span>
+                                <button onclick="editRoomInline({{ room.id }}, '{{ room.name }}', event)" 
+                                        class="btn-icon" title="Modifier">✏️</button>
+                                <button onclick="deleteRoomInline({{ room.id }}, event)" 
+                                        class="btn-icon btn-danger" title="Supprimer">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                {% end %}
+            </div>
+            <div class="legend">
+                <h4>Légende:</h4>
+                <p>🟦 = Pièce (2xxx)</p>
+                <p>⬜ = Vide (0)</p>
+                <p><strong>Mode peinture:</strong> Cliquez sur une pièce puis peignez plusieurs cases</p>
+            </div>
+        </div>
+
+        <!-- Contenu Capteurs -->
+        <div id="tab-sensors" class="tab-panel">
+            <h3>🌡️ Capteurs</h3>
+            <div class="paint-tools" id="sensor-paint-tools">
+                <div class="paint-actions">
+                    <button onclick="setPaintAction('add')" class="btn-paint btn-paint-add active" id="paint-add">
+                        ➕ Ajouter couverture
+                    </button>
+                    <button onclick="setPaintAction('remove')" class="btn-paint btn-paint-remove" id="paint-remove">
+                        ➖ Retirer couverture
+                    </button>
+                </div>
+                <button onclick="clearSensorFromGrid()" class="btn-clear" id="sensor-clear">
+                    🗑️ Tout effacer ce capteur
+                </button>
+            </div>
+            <div id="available-sensors">
+                <!-- Chargé dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Contenu Équipements -->
+        <div id="tab-equipments" class="tab-panel">
+            <h3>⚙️ Équipements</h3>
+            <div class="paint-tools" id="equipment-paint-tools">
+                <div class="paint-actions">
+                    <button onclick="setPaintAction('add')" class="btn-paint btn-paint-add active" id="paint-add-eq">
+                        ➕ Ajouter couverture
+                    </button>
+                    <button onclick="setPaintAction('remove')" class="btn-paint btn-paint-remove" id="paint-remove-eq">
+                        ➖ Retirer couverture
+                    </button>
+                </div>
+                <button onclick="clearEquipmentFromGrid()" class="btn-clear" id="equipment-clear">
+                    🗑️ Tout effacer cet équipement
+                </button>
+            </div>
+            <div id="available-equipments">
+                <!-- Chargé dynamiquement -->
+            </div>
         </div>
     </div>
 
@@ -35,8 +104,8 @@
     <div class="grid-container">
         <div id="house-grid" style="
             display: grid;
-            grid-template-columns: repeat({{ house.width }}, 40px);
-            grid-template-rows: repeat({{ house.length }}, 40px);
+            grid-template-columns: repeat({{ house.width + 2 }}, 40px);
+            grid-template-rows: repeat({{ house.length + 2 }}, 40px);
             gap: 1px;
             background: #ccc;
             border: 2px solid #333;
@@ -56,8 +125,8 @@
     {% module xsrf_form_html() %}
     <input type="hidden" name="grid" id="grid-data">
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary">✅ Valider et continuer</button>
-        <a href="/houses" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">Valider</button>
+        <a href="/app/house.html?id={{ house.id }}" class="btn btn-secondary">Annuler</a>
     </div>
 </form>
 
@@ -69,13 +138,52 @@
 }
 
 .rooms-panel {
-    min-width: 250px;
-    padding: 1rem;
+    min-width: 300px;
+    padding: 0;
     background: #f5f5f5;
     border-radius: 8px;
+    overflow: hidden;
 }
 
-.room-item {
+.tabs-container {
+    display: flex;
+    background: #e0e0e0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.tab-btn.active {
+    background: #f5f5f5;
+    color: #007bff;
+    border-bottom: 3px solid #007bff;
+}
+
+.tab-panel {
+    display: none;
+    padding: 1rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.room-item, .sensor-item, .equipment-item {
     padding: 0.5rem;
     margin: 0.5rem 0;
     background: #007bff;
@@ -86,6 +194,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.sensor-item {
+    background: #28a745;
+}
+
+.equipment-item {
+    background: #ffc107;
+    color: #333;
 }
 
 .room-item:hover {
@@ -126,6 +243,24 @@
     font-size: 10px;
     cursor: pointer;
     transition: all 0.2s;
+    position: relative;
+}
+
+.cell-icons {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.grid-cell.wall {
+    background: #e0e0e0;
+    cursor: not-allowed;
+}
+
+.grid-cell.wall:hover {
+    background: #e0e0e0;
 }
 
 .grid-cell:hover {
@@ -169,33 +304,423 @@
 .legend p {
     margin: 0.5rem 0;
 }
+
+.btn-cancel {
+    background: #dc3545;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.btn-cancel:hover {
+    background: #c82333;
+}
+
+.hint {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    margin: 0.5rem 0;
+}
+
+.instruction-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.instruction-box strong {
+    font-size: 1rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.sensor-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(40, 167, 69, 0.25);
+    border: 1px dashed #28a745;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.equipment-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 193, 7, 0.25);
+    border: 1px dashed #ffc107;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.multi-overlay {
+    opacity: 1;
+    font-weight: bold;
+}
+
+.paint-tools {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+    display: none;
+}
+
+.paint-tools.active {
+    display: block;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.paint-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-paint {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #dee2e6;
+    background: white;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-paint:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-paint-add.active {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-paint-remove.active {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-clear {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #dc3545;
+    background: white;
+    color: #dc3545;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-clear:hover {
+    background: #dc3545;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.btn-clear:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.room-item.selected {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.sensor-item.painting {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
+    border: 3px solid #20c997;
+    font-weight: bold;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    animation: pulse 1.5s infinite;
+}
+
+.equipment-item.painting {
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%) !important;
+    color: #333 !important;
+    border: 3px solid #ff9800;
+    font-weight: bold;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1.05); }
+    50% { transform: scale(1.08); }
+}
+
+.coverage-count {
+    font-size: 0.7rem;
+    background: rgba(255,255,255,0.3);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.btn-icon {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    font-size: 14px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: rgba(255,255,255,0.2);
+    transform: scale(1.1);
+}
+
+.btn-icon.btn-danger:hover {
+    background: rgba(220, 53, 69, 0.2);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+}
 </style>
 
 <script>
-// Données de la maison
-const houseLength = {{ house.length }};
-const houseWidth = {{ house.width }};
-const existingGrid = {{ house.grid }};
+// Données de la maison (dimensions incluant le contour de 1 case)
+const houseLength = {{ house.length + 2 }};
+const houseWidth = {{ house.width + 2 }};
+const houseId = {{ house.id }};
+const existingGrid = {% raw house.grid %};
 const rooms = [
     {% for room in house.rooms %}
     { id: {{ room.id }}, name: "{{ room.name }}" },
     {% end %}
 ];
 
-// État de la grille (matrice 2D)
+// État de la grille (matrice 2D ou couches)
 let grid = [];
 let selectedRoom = null;
 let selectedCells = [];
 let isPainting = false;
 let paintMode = 'add'; // 'add' ou 'remove'
 
+// Données des capteurs et équipements
+let sensors = [];
+let equipments = [];
+let sensorPositions = {}; // {sensorId: {x, y}} - LEGACY
+let equipmentPositions = {}; // {equipmentId: {x, y}} - LEGACY
+let placementMode = null; // {type: 'sensor'|'equipment', id: number, name: string}
+
+// Système de modes basé sur l'onglet actif
+let currentTab = 'rooms'; // 'rooms', 'sensors', 'equipments'
+let selectedItem = null; // {type, id, name}
+let paintAction = 'add'; // 'add', 'remove'
+
+// ==================== GRID LAYERS UTILITIES ====================
+function isLegacyGrid(grid) {
+    return grid && grid[0] && typeof grid[0][0] === 'number';
+}
+
+function migrateToLayers(grid) {
+    if (!isLegacyGrid(grid)) return grid;
+    return grid.map(row => 
+        row.map(cell => ({
+            base: cell,
+            sensors: [],
+            equipments: []
+        }))
+    );
+}
+
+function getCellBase(cell) {
+    return typeof cell === 'number' ? cell : (cell.base || 0);
+}
+
+function setCellBase(cell, value) {
+    if (typeof cell === 'number') return value;
+    cell.base = value;
+    return cell;
+}
+
+function getCellSensors(cell) {
+    return typeof cell === 'number' ? [] : (cell.sensors || []);
+}
+
+function getCellEquipments(cell) {
+    return typeof cell === 'number' ? [] : (cell.equipments || []);
+}
+
+function addSensorToCell(cell, sensorId) {
+    if (typeof cell === 'number') {
+        return { base: cell, sensors: [sensorId], equipments: [] };
+    }
+    if (!cell.sensors) cell.sensors = [];
+    if (!cell.sensors.includes(sensorId)) {
+        cell.sensors.push(sensorId);
+    }
+    return cell;
+}
+
+function removeSensorFromCell(cell, sensorId) {
+    if (typeof cell === 'number') return cell;
+    if (cell.sensors) {
+        const index = cell.sensors.indexOf(sensorId);
+        if (index > -1) cell.sensors.splice(index, 1);
+    }
+    return cell;
+}
+
+function addEquipmentToCell(cell, equipmentId) {
+    if (typeof cell === 'number') {
+        return { base: cell, sensors: [], equipments: [equipmentId] };
+    }
+    if (!cell.equipments) cell.equipments = [];
+    if (!cell.equipments.includes(equipmentId)) {
+        cell.equipments.push(equipmentId);
+    }
+    return cell;
+}
+
+function removeEquipmentFromCell(cell, equipmentId) {
+    if (typeof cell === 'number') return cell;
+    if (cell.equipments) {
+        const index = cell.equipments.indexOf(equipmentId);
+        if (index > -1) cell.equipments.splice(index, 1);
+    }
+    return cell;
+}
+
 // Initialiser la grille
 function initGrid() {
-    // Copier la grille existante ou créer une nouvelle
+    // Copier la grille existante ou créer une nouvelle avec contour de murs
     if (existingGrid && existingGrid.length === houseLength) {
         grid = JSON.parse(JSON.stringify(existingGrid));
+        // Migrer vers couches si nécessaire
+        grid = migrateToLayers(grid);
     } else {
-        grid = Array(houseLength).fill(0).map(() => Array(houseWidth).fill(0));
+        // Créer une nouvelle grille avec un contour de murs (format couches)
+        grid = [];
+        for (let i = 0; i < houseLength; i++) {
+            const row = [];
+            for (let j = 0; j < houseWidth; j++) {
+                // Contour = mur (1), intérieur = vide (0)
+                const isBorder = (
+                    i === 0 || i === houseLength - 1 || 
+                    j === 0 || j === houseWidth - 1
+                );
+                row.push({
+                    base: isBorder ? 1 : 0,
+                    sensors: [],
+                    equipments: []
+                });
+            }
+            grid.push(row);
+        }
     }
     renderGrid();
     updateRoomSizes();
@@ -208,25 +733,116 @@ function renderGrid() {
     
     for (let i = 0; i < houseLength; i++) {
         for (let j = 0; j < houseWidth; j++) {
+            const cellData = grid[i][j];
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
             cell.dataset.row = i;
             cell.dataset.col = j;
             
-            const value = grid[i][j];
-            if (value !== 0) {
+            const baseValue = getCellBase(cellData);
+            const cellSensors = getCellSensors(cellData);
+            const cellEquipments = getCellEquipments(cellData);
+            
+            let tooltipParts = [];
+            
+            // 1. Couche de base (pièce/mur/vide)
+            if (baseValue === 1) {
+                cell.classList.add('wall');
+                tooltipParts.push('Extérieur (contour)');
+            } else if (baseValue >= 2000 && baseValue < 3000) {
                 cell.classList.add('occupied');
-                // Afficher le nom de la pièce au lieu du code
-                const roomId = value - 2000;
+                const roomId = baseValue - 2000;
                 const room = rooms.find(r => r.id === roomId);
-                cell.textContent = room ? room.name.substring(0, 3) : value;
-                cell.title = room ? room.name : value;
+                cell.textContent = room ? room.name.substring(0, 3) : baseValue;
+                if (room) tooltipParts.push(room.name);
             }
             
-            // Événements pour le mode peinture
-            cell.addEventListener('mousedown', (e) => handleMouseDown(e, i, j));
-            cell.addEventListener('mouseenter', () => handleMouseEnter(i, j));
-            cell.addEventListener('mouseup', () => handleMouseUp());
+            // 2. Overlays des capteurs
+            if (cellSensors.length > 0) {
+                const opacity = Math.min(0.2 + (cellSensors.length * 0.15), 0.6);
+                const overlay = document.createElement('div');
+                overlay.className = 'sensor-overlay';
+                if (cellSensors.length > 1) overlay.classList.add('multi-overlay');
+                overlay.style.background = `rgba(40, 167, 69, ${opacity})`;
+                
+                const sensorNames = cellSensors.map(id => {
+                    const sensor = sensors.find(s => s.id === id);
+                    return sensor ? sensor.name : `Sensor ${id}`;
+                });
+                tooltipParts.push('🌡️ ' + sensorNames.join(', '));
+                
+                cell.appendChild(overlay);
+            }
+            
+            // 3. Overlays des équipements
+            if (cellEquipments.length > 0) {
+                const opacity = Math.min(0.2 + (cellEquipments.length * 0.15), 0.6);
+                const overlay = document.createElement('div');
+                overlay.className = 'equipment-overlay';
+                if (cellEquipments.length > 1) overlay.classList.add('multi-overlay');
+                overlay.style.background = `rgba(255, 193, 7, ${opacity})`;
+                
+                const equipNames = cellEquipments.map(id => {
+                    const equip = equipments.find(e => e.id === id);
+                    return equip ? equip.name : `Equipment ${id}`;
+                });
+                tooltipParts.push('⚙️ ' + equipNames.join(', '));
+                
+                cell.appendChild(overlay);
+            }
+            
+            // 4. Icônes
+            if (cellSensors.length > 0 || cellEquipments.length > 0) {
+                const icons = document.createElement('div');
+                icons.className = 'cell-icons';
+                icons.style.position = 'absolute';
+                icons.style.top = '2px';
+                icons.style.right = '2px';
+                icons.style.fontSize = '12px';
+                icons.style.zIndex = '2';
+                
+                const iconArray = [];
+                cellSensors.forEach(id => {
+                    const sensor = sensors.find(s => s.id === id);
+                    if (sensor) iconArray.push(getSensorIcon(sensor.type));
+                });
+                cellEquipments.forEach(id => {
+                    const equip = equipments.find(e => e.id === id);
+                    if (equip) iconArray.push(getEquipmentIcon(equip.type));
+                });
+                
+                icons.textContent = iconArray.join('');
+                cell.appendChild(icons);
+            }
+            
+            cell.title = tooltipParts.join(' | ');
+            
+            // 5. Événements selon l'onglet actif
+            if (currentTab === 'rooms') {
+                // Onglet pièces
+                if (baseValue !== 1) {
+                    cell.addEventListener('mousedown', (e) => handleMouseDown(e, i, j));
+                    cell.addEventListener('mouseenter', () => handleMouseEnter(i, j));
+                    cell.addEventListener('mouseup', () => handleMouseUp());
+                    cell.style.cursor = 'pointer';
+                }
+            } else if (currentTab === 'sensors' && selectedItem) {
+                // Onglet capteurs avec capteur sélectionné
+                cell.addEventListener('mousedown', (e) => handleSensorPaint(e, i, j));
+                cell.addEventListener('mouseenter', () => handleSensorPaintEnter(i, j));
+                cell.style.cursor = paintAction === 'add' ? 'crosshair' : 'not-allowed';
+                if (paintAction === 'add') {
+                    cell.style.outline = '2px dashed #28a745';
+                }
+            } else if (currentTab === 'equipments' && selectedItem) {
+                // Onglet équipements avec équipement sélectionné
+                cell.addEventListener('mousedown', (e) => handleEquipmentPaint(e, i, j));
+                cell.addEventListener('mouseenter', () => handleEquipmentPaintEnter(i, j));
+                cell.style.cursor = paintAction === 'add' ? 'crosshair' : 'not-allowed';
+                if (paintAction === 'add') {
+                    cell.style.outline = '2px dashed #ffc107';
+                }
+            }
             
             gridElement.appendChild(cell);
         }
@@ -244,20 +860,22 @@ function handleMouseDown(e, row, col) {
     
     if (!selectedRoom) {
         // Mode sélection: sélectionner la pièce cliquée
-        const value = grid[row][col];
-        if (value !== 0) {
-            selectRoomFromCell(value);
+        const cellData = grid[row][col];
+        const baseValue = getCellBase(cellData);
+        if (baseValue !== 0) {
+            selectRoomFromCell(baseValue);
         }
         return;
     }
     
     isPainting = true;
-    const value = grid[row][col];
+    const cellData = grid[row][col];
+    const baseValue = getCellBase(cellData);
     
-    if (value === 0) {
+    if (baseValue === 0) {
         paintMode = 'add';
         paintCell(row, col);
-    } else if (value === 2000 + selectedRoom.id) {
+    } else if (baseValue === 2000 + selectedRoom.id) {
         paintMode = 'remove';
         unpaintCell(row, col);
     }
@@ -266,9 +884,12 @@ function handleMouseDown(e, row, col) {
 function handleMouseEnter(row, col) {
     if (!isPainting || !selectedRoom) return;
     
-    if (paintMode === 'add' && grid[row][col] === 0) {
+    const cellData = grid[row][col];
+    const baseValue = getCellBase(cellData);
+    
+    if (paintMode === 'add' && baseValue === 0) {
         paintCell(row, col);
-    } else if (paintMode === 'remove' && grid[row][col] === 2000 + selectedRoom.id) {
+    } else if (paintMode === 'remove' && baseValue === 2000 + selectedRoom.id) {
         unpaintCell(row, col);
     }
 }
@@ -279,28 +900,82 @@ function handleMouseUp() {
 }
 
 function paintCell(row, col) {
+    const cellData = grid[row][col];
+    const baseValue = getCellBase(cellData);
+    
+    // Ne pas permettre de peindre sur les murs
+    if (baseValue === 1) return;
+    
     const roomCode = 2000 + selectedRoom.id;
-    grid[row][col] = roomCode;
+    grid[row][col] = setCellBase(cellData, roomCode);
     
     // Mise à jour visuelle immédiate
-    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-    if (cell) {
-        cell.classList.add('occupied');
-        cell.textContent = selectedRoom.name.substring(0, 3);
-        cell.title = selectedRoom.name;
-    }
+    renderGrid();
 }
 
 function unpaintCell(row, col) {
-    grid[row][col] = 0;
+    const cellData = grid[row][col];
+    grid[row][col] = setCellBase(cellData, 0);
     
     // Mise à jour visuelle immédiate
-    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-    if (cell) {
-        cell.classList.remove('occupied');
-        cell.textContent = '';
-        cell.title = '';
+    renderGrid();
+}
+
+// ==================== SENSOR/EQUIPMENT PAINTING ====================
+function handleSensorPaint(e, row, col) {
+    e.preventDefault();
+    if (!selectedItem) return;
+    
+    // Ne peindre que sur clic, pas sur survol
+    paintSensorCell(row, col);
+}
+
+function handleSensorPaintEnter(row, col) {
+    // Désactivé: ne plus peindre au survol
+    return;
+}
+
+function paintSensorCell(row, col) {
+    if (!selectedItem) return;
+    
+    const cellData = grid[row][col];
+    
+    if (paintAction === 'add') {
+        grid[row][col] = addSensorToCell(cellData, selectedItem.id);
+    } else if (paintAction === 'remove') {
+        grid[row][col] = removeSensorFromCell(cellData, selectedItem.id);
     }
+    
+    renderGrid();
+    updateCoverageCount();
+}
+
+function handleEquipmentPaint(e, row, col) {
+    e.preventDefault();
+    if (!selectedItem) return;
+    
+    // Ne peindre que sur clic, pas sur survol
+    paintEquipmentCell(row, col);
+}
+
+function handleEquipmentPaintEnter(row, col) {
+    // Désactivé: ne plus peindre au survol
+    return;
+}
+
+function paintEquipmentCell(row, col) {
+    if (!selectedItem) return;
+    
+    const cellData = grid[row][col];
+    
+    if (paintAction === 'add') {
+        grid[row][col] = addEquipmentToCell(cellData, selectedItem.id);
+    } else if (paintAction === 'remove') {
+        grid[row][col] = removeEquipmentFromCell(cellData, selectedItem.id);
+    }
+    
+    renderGrid();
+    updateCoverageCount();
 }
 
 // Sélectionner toutes les cellules d'une pièce depuis la grille
@@ -312,7 +987,10 @@ function selectRoomFromCell(roomCode) {
         const row = parseInt(cell.dataset.row);
         const col = parseInt(cell.dataset.col);
         
-        if (grid[row][col] === roomCode) {
+        const cellData = grid[row][col];
+        const baseValue = getCellBase(cellData);
+        
+        if (baseValue === roomCode) {
             cell.classList.add('selected');
             selectedCells.push({row, col});
         } else {
@@ -328,7 +1006,6 @@ function selectRoomFromCell(roomCode) {
 // Retirer la pièce sélectionnée
 function removeSelectedRoom() {
     if (selectedCells.length === 0) {
-        alert('Aucune pièce sélectionnée. Cliquez sur une pièce dans la grille d\'abord.');
         return;
     }
     
@@ -337,13 +1014,19 @@ function removeSelectedRoom() {
     }
     
     selectedCells.forEach(({row, col}) => {
-        grid[row][col] = 0;
+        // Supprimer la pièce ET tous les capteurs/équipements dans cette case
+        grid[row][col] = {
+            base: 0,
+            sensors: [],
+            equipments: []
+        };
     });
     
     selectedCells = [];
     selectedRoom = null;
     renderGrid();
     updateRoomSizes();
+    updateCoverageCount();
     
     // Désélectionner dans le panneau
     document.querySelectorAll('.room-item').forEach(item => {
@@ -358,7 +1041,8 @@ function updateRoomSizes() {
     // Compter les cases pour chaque pièce
     for (let i = 0; i < houseLength; i++) {
         for (let j = 0; j < houseWidth; j++) {
-            const value = grid[i][j];
+            const cellData = grid[i][j];
+            const value = getCellBase(cellData);
             if (value >= 2000 && value < 3000) {
                 const roomId = value - 2000;
                 roomSizes[roomId] = (roomSizes[roomId] || 0) + 1;
@@ -386,9 +1070,9 @@ function selectRoomFromPanel(roomId) {
     
     // Mettre à jour l'UI du panneau
     document.querySelectorAll('.room-item').forEach(item => {
-        item.classList.remove('active');
+        item.classList.remove('active', 'selected');
         if (parseInt(item.dataset.roomId) === roomId) {
-            item.classList.add('active');
+            item.classList.add('active', 'selected');
         }
     });
     
@@ -410,11 +1094,133 @@ document.getElementById('available-rooms').addEventListener('click', (e) => {
 // Effacer la grille
 function clearGrid() {
     if (confirm('Êtes-vous sûr de vouloir effacer toute la grille ?')) {
-        grid = Array(houseLength).fill(0).map(() => Array(houseWidth).fill(0));
+        // Effacer uniquement l'intérieur, garder les murs du contour
+        for (let i = 0; i < houseLength; i++) {
+            for (let j = 0; j < houseWidth; j++) {
+                const cellData = grid[i][j];
+                const baseValue = getCellBase(cellData);
+                if (baseValue !== 1) {  // Ne pas toucher aux murs
+                    grid[i][j] = setCellBase(cellData, 0);
+                }
+            }
+        }
         selectedCells = [];
         renderGrid();
-        updateRoomAvailability();
+        updateRoomSizes();
     }
+}
+
+// ==================== MODE MANAGEMENT ====================
+// Le mode est maintenant déterminé par l'onglet actif
+
+function setPaintAction(action) {
+    paintAction = action;
+    
+    // Mettre à jour tous les boutons de peinture
+    document.querySelectorAll('.btn-paint').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll(`.btn-paint-${action}`).forEach(btn => btn.classList.add('active'));
+    
+    // Feedback visuel
+    const cursor = action === 'add' ? 'Cliquez-glissez pour ajouter' : 'Cliquez-glissez pour retirer';
+    console.log('Action:', cursor);
+    
+    renderGrid();
+}
+
+function selectItemForPaint(type, id, name) {
+    selectedItem = {type, id, name};
+    
+    // Retirer la sélection précédente
+    document.querySelectorAll('.sensor-item, .equipment-item').forEach(item => {
+        item.classList.remove('painting');
+    });
+    
+    // Marquer l'item sélectionné
+    event.currentTarget.classList.add('painting');
+    
+    // Afficher les outils de peinture
+    if (type === 'sensor') {
+        const tools = document.getElementById('sensor-paint-tools');
+        tools.classList.add('active');
+        tools.style.display = 'block';
+        document.getElementById('sensor-clear').disabled = false;
+    } else if (type === 'equipment') {
+        const tools = document.getElementById('equipment-paint-tools');
+        tools.classList.add('active');
+        tools.style.display = 'block';
+        document.getElementById('equipment-clear').disabled = false;
+    }
+    
+    renderGrid();
+}
+
+function updateCoverageCount() {
+    // Compter les cellules couvertes par chaque capteur/équipement
+    const sensorCounts = {};
+    const equipmentCounts = {};
+    
+    for (let i = 0; i < houseLength; i++) {
+        for (let j = 0; j < houseWidth; j++) {
+            const cellData = grid[i][j];
+            const cellSensors = getCellSensors(cellData);
+            const cellEquipments = getCellEquipments(cellData);
+            
+            cellSensors.forEach(id => {
+                sensorCounts[id] = (sensorCounts[id] || 0) + 1;
+            });
+            
+            cellEquipments.forEach(id => {
+                equipmentCounts[id] = (equipmentCounts[id] || 0) + 1;
+            });
+        }
+    }
+    
+    // Mettre à jour l'affichage
+    sensors.forEach(sensor => {
+        const count = sensorCounts[sensor.id] || 0;
+        const countElement = document.querySelector(`[data-sensor-id="${sensor.id}"] .coverage-count`);
+        if (countElement) {
+            countElement.textContent = `${count} case${count > 1 ? 's' : ''}`;
+        }
+    });
+    
+    equipments.forEach(equip => {
+        const count = equipmentCounts[equip.id] || 0;
+        const countElement = document.querySelector(`[data-equipment-id="${equip.id}"] .coverage-count`);
+        if (countElement) {
+            countElement.textContent = `${count} case${count > 1 ? 's' : ''}`;
+        }
+    });
+}
+
+function clearSensorFromGrid() {
+    if (!selectedItem) return;
+    if (!confirm(`Effacer toutes les zones couvertes par "${selectedItem.name}" ?`)) return;
+    
+    for (let i = 0; i < houseLength; i++) {
+        for (let j = 0; j < houseWidth; j++) {
+            const cellData = grid[i][j];
+            grid[i][j] = removeSensorFromCell(cellData, selectedItem.id);
+        }
+    }
+    
+    renderGrid();
+    updateCoverageCount();
+}
+
+function clearEquipmentFromGrid() {
+    if (!selectedItem) return;
+    if (!confirm(`Effacer toutes les zones couvertes par "${selectedItem.name}" ?`)) return;
+    
+    for (let i = 0; i < houseLength; i++) {
+        for (let j = 0; j < houseWidth; j++) {
+            const cellData = grid[i][j];
+            grid[i][j] = removeEquipmentFromCell(cellData, selectedItem.id);
+        }
+    }
+    
+    renderGrid();
+    updateCoverageCount();
 }
 
 // Validation : vérifier que toutes les cases d'une pièce sont connectées
@@ -424,7 +1230,8 @@ function validateConnectivity() {
     
     for (let i = 0; i < houseLength; i++) {
         for (let j = 0; j < houseWidth; j++) {
-            const value = grid[i][j];
+            const cellData = grid[i][j];
+            const value = getCellBase(cellData);
             if (value >= 2000 && value < 3000 && !checkedRooms.has(value)) {
                 checkedRooms.add(value);
                 
@@ -432,7 +1239,8 @@ function validateConnectivity() {
                 const roomCells = [];
                 for (let row = 0; row < houseLength; row++) {
                     for (let col = 0; col < houseWidth; col++) {
-                        if (grid[row][col] === value) {
+                        const cellData2 = grid[row][col];
+                        if (getCellBase(cellData2) === value) {
                             roomCells.push({row, col});
                         }
                     }
@@ -489,8 +1297,260 @@ function areAllCellsConnected(cells) {
     return visited.size === cells.length;
 }
 
+// ==================== TAB MANAGEMENT ====================
+function switchTab(tabName, event) {
+    // Sauvegarder l'onglet actif
+    currentTab = tabName;
+    selectedItem = null;
+    isPainting = false;
+    
+    // Cacher tous les panneaux
+    const panels = document.querySelectorAll('.tab-panel');
+    panels.forEach(panel => panel.classList.remove('active'));
+    
+    // Retirer l'active de tous les boutons
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    // Afficher le panneau sélectionné
+    const selectedPanel = document.getElementById('tab-' + tabName);
+    if (selectedPanel) {
+        selectedPanel.classList.add('active');
+    }
+    
+    // Activer le bouton sélectionné
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    // Cacher les outils de peinture et réinitialiser les sélections
+    document.getElementById('sensor-paint-tools').style.display = 'none';
+    document.getElementById('equipment-paint-tools').style.display = 'none';
+    document.querySelectorAll('.sensor-item, .equipment-item, .room-item').forEach(item => {
+        item.classList.remove('painting', 'selected');
+    });
+    
+    renderGrid();
+}
+
+// ==================== SENSOR/EQUIPMENT LOADING ====================
+async function loadSensorsAndEquipments() {
+    try {
+        console.log('Loading sensors for house:', houseId);
+        
+        // Load sensors - get by house_id instead of room_id
+        const sensorsResp = await fetch(`/api/sensors?house_id=${houseId}`);
+        console.log('Sensors response status:', sensorsResp.status);
+        
+        if (sensorsResp.ok) {
+            const sensorsData = await sensorsResp.json();
+            console.log('Sensors data received:', sensorsData);
+            sensors = Array.isArray(sensorsData) ? sensorsData : (sensorsData.sensors || []);
+            console.log('Sensors array:', sensors);
+            
+            displaySensors();
+        } else {
+            console.error('Failed to load sensors:', sensorsResp.status);
+            const errorText = await sensorsResp.text();
+            console.error('Error details:', errorText);
+        }
+        
+        console.log('Loading equipments for house:', houseId);
+        
+        // Load equipments - get by house_id instead of room_id
+        const equipResp = await fetch(`/api/equipments?house_id=${houseId}`);
+        console.log('Equipments response status:', equipResp.status);
+        
+        if (equipResp.ok) {
+            const equipData = await equipResp.json();
+            console.log('Equipments data received:', equipData);
+            equipments = Array.isArray(equipData) ? equipData : (equipData.equipments || []);
+            console.log('Equipments array:', equipments);
+            
+            displayEquipments();
+        } else {
+            console.error('Failed to load equipments:', equipResp.status);
+            const errorText = await equipResp.text();
+            console.error('Error details:', errorText);
+        }
+    } catch (error) {
+        console.error('Error loading sensors/equipments:', error);
+    }
+}
+
+function displaySensors() {
+    const container = document.getElementById('available-sensors');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (sensors.length === 0) {
+        container.innerHTML = '<p class="hint">Aucun capteur dans cette maison</p>';
+        return;
+    }
+    
+    sensors.forEach(sensor => {
+        const div = document.createElement('div');
+        div.className = 'sensor-item';
+        div.setAttribute('data-sensor-id', sensor.id);
+        
+        const icon = getSensorIcon(sensor.type);
+        
+        // Compter les cellules couvertes
+        let coverageCount = 0;
+        for (let i = 0; i < houseLength; i++) {
+            for (let j = 0; j < houseWidth; j++) {
+                const cellSensors = getCellSensors(grid[i][j]);
+                if (cellSensors.includes(sensor.id)) {
+                    coverageCount++;
+                }
+            }
+        }
+        
+        div.innerHTML = `
+            <span>${icon} ${sensor.name}</span>
+            <span class="coverage-count">${coverageCount} case${coverageCount > 1 ? 's' : ''}</span>
+        `;
+        
+        // Cliquer pour sélectionner le capteur
+        div.onclick = () => selectItemForPaint('sensor', sensor.id, sensor.name);
+        
+        container.appendChild(div);
+    });
+}
+
+function displayEquipments() {
+    const container = document.getElementById('available-equipments');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (equipments.length === 0) {
+        container.innerHTML = '<p class="hint">Aucun équipement dans cette maison</p>';
+        return;
+    }
+    
+    equipments.forEach(equip => {
+        const div = document.createElement('div');
+        div.className = 'equipment-item';
+        div.setAttribute('data-equipment-id', equip.id);
+        
+        const icon = getEquipmentIcon(equip.type);
+        
+        // Compter les cellules couvertes
+        let coverageCount = 0;
+        for (let i = 0; i < houseLength; i++) {
+            for (let j = 0; j < houseWidth; j++) {
+                const cellEquipments = getCellEquipments(grid[i][j]);
+                if (cellEquipments.includes(equip.id)) {
+                    coverageCount++;
+                }
+            }
+        }
+        
+        div.innerHTML = `
+            <span>${icon} ${equip.name}</span>
+            <span class="coverage-count">${coverageCount} case${coverageCount > 1 ? 's' : ''}</span>
+        `;
+        
+        // Cliquer pour sélectionner l'équipement
+        div.onclick = () => selectItemForPaint('equipment', equip.id, equip.name);
+        
+        container.appendChild(div);
+    });
+}
+
+function getSensorIcon(type) {
+    const icons = {
+        'temperature': '🌡️',
+        'light': '💡',
+        'humidity': '🌧️',
+        'motion': '👤'
+    };
+    return icons[type] || '📡';
+}
+
+function getEquipmentIcon(type) {
+    const icons = {
+        'window': '🪟',
+        'door': '🚪',
+        'light': '💡',
+        'speaker': '🔊'
+    };
+    return icons[type] || '⚙️';
+}
+
+// ==================== PLACEMENT MODE ====================
+function startPlacement(type, id, name) {
+    const isReplacing = (type === 'sensor' && sensorPositions[id]) || 
+                       (type === 'equipment' && equipmentPositions[id]);
+    const action = isReplacing ? 'déplacer' : 'placer';
+    
+    placementMode = {type, id, name};
+    
+    // Add cancel button if not exists
+    let cancelBtn = document.getElementById('cancel-placement-btn');
+    if (!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancel-placement-btn';
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-cancel';
+        cancelBtn.textContent = '❌ Annuler le placement';
+        cancelBtn.onclick = cancelPlacement;
+        
+        const gridContainer = document.querySelector('.grid-container');
+        gridContainer.insertBefore(cancelBtn, gridContainer.firstChild);
+    }
+    
+    cancelBtn.style.display = 'block';
+    renderGrid();
+}
+
+function cancelPlacement() {
+    placementMode = null;
+    const cancelBtn = document.getElementById('cancel-placement-btn');
+    if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+    }
+    renderGrid();
+}
+
+function removeFromGrid(type, id, name) {
+    if (!confirm(`Retirer "${name}" de la grille ?`)) return;
+    
+    if (type === 'sensor') {
+        delete sensorPositions[id];
+        displaySensors();
+    } else if (type === 'equipment') {
+        delete equipmentPositions[id];
+        displayEquipments();
+    }
+    
+    renderGrid();
+}
+
+function handleCellClick(row, col) {
+    if (!placementMode) return;
+    
+    const cellValue = grid[row][col];
+    
+    // Placement autorisé partout : pièces (>= 2000), extérieur (0), et contour (1)
+    // Save position
+    if (placementMode.type === 'sensor') {
+        sensorPositions[placementMode.id] = {x: col, y: row};
+        displaySensors();
+    } else if (placementMode.type === 'equipment') {
+        equipmentPositions[placementMode.id] = {x: col, y: row};
+        displayEquipments();
+    }
+    
+    const locationName = cellValue >= 2000 ? 
+        rooms.find(r => r.id === cellValue - 2000)?.name || 'Pièce' : 
+        'Extérieur';
+    cancelPlacement();
+}
+
+// ==================== FORM SUBMISSION ====================
 // Soumettre le formulaire avec validation
-document.getElementById('grid-form').addEventListener('submit', (e) => {
+document.getElementById('grid-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     // Valider la connectivité
@@ -501,13 +1561,169 @@ document.getElementById('grid-form').addEventListener('submit', (e) => {
         return;
     }
     
-    // Tout est OK, soumettre
-    document.getElementById('grid-data').value = JSON.stringify(grid);
+    // La grille contient maintenant les données des capteurs/équipements intégrées
+    // Plus besoin de sauvegarder grid_x/grid_y séparément
+    
+    // Simplifier la grille avant l'envoi (retirer les listes vides)
+    const simplifiedGrid = grid.map(row => 
+        row.map(cell => {
+            if (typeof cell === 'number') return cell; // Legacy
+            
+            const simple = { base: cell.base };
+            if (cell.sensors && cell.sensors.length > 0) simple.sensors = cell.sensors;
+            if (cell.equipments && cell.equipments.length > 0) simple.equipments = cell.equipments;
+            return simple;
+        })
+    );
+    
+    // Tout est OK, soumettre la grille
+    document.getElementById('grid-data').value = JSON.stringify(simplifiedGrid);
     e.target.submit();
 });
 
+// ==================== ROOM CRUD ====================
+function showAddRoomModal() {
+    const modal = document.getElementById('room-modal');
+    if (modal) {
+        modal.classList.add('show');
+        document.getElementById('room-name-input').value = '';
+        document.getElementById('room-name-input').focus();
+    }
+}
+
+function closeRoomModal() {
+    const modal = document.getElementById('room-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+async function addRoom() {
+    const name = document.getElementById('room-name-input').value.trim();
+    if (!name) {
+        alert('Veuillez entrer un nom de pièce');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/houses/${houseId}/rooms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Ajouter la nouvelle pièce à la liste
+            rooms.push({ id: data.id, name: data.name });
+            
+            // Recharger la page pour mettre à jour l'interface
+            window.location.reload();
+        } else {
+            alert('Erreur lors de la création de la pièce');
+        }
+    } catch (error) {
+        alert('Erreur de connexion');
+    }
+}
+
+function editRoomInline(roomId, currentName, event) {
+    event.stopPropagation();
+    
+    const newName = prompt('Nouveau nom de la pièce:', currentName);
+    if (!newName || newName.trim() === '' || newName === currentName) return;
+    
+    updateRoomName(roomId, newName.trim());
+}
+
+async function updateRoomName(roomId, newName) {
+    try {
+        const response = await fetch(`/api/rooms/${roomId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        });
+        
+        if (response.ok) {
+            // Mettre à jour dans la liste locale
+            const room = rooms.find(r => r.id === roomId);
+            if (room) {
+                room.name = newName;
+            }
+            
+            // Recharger la page pour mettre à jour l'interface
+            window.location.reload();
+        } else {
+            alert('Erreur lors de la modification');
+        }
+    } catch (error) {
+        alert('Erreur de connexion');
+    }
+}
+
+function deleteRoomInline(roomId, event) {
+    event.stopPropagation();
+    
+    const room = rooms.find(r => r.id === roomId);
+    if (!confirm(`Supprimer la pièce "${room ? room.name : ''}" ?\n\nAttention : toutes les cases de cette pièce seront retirées de la grille.`)) {
+        return;
+    }
+    
+    deleteRoomFromAPI(roomId);
+}
+
+async function deleteRoomFromAPI(roomId) {
+    try {
+        const response = await fetch(`/api/rooms/${roomId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Retirer la pièce de la grille
+            for (let i = 0; i < houseLength; i++) {
+                for (let j = 0; j < houseWidth; j++) {
+                    const cellData = grid[i][j];
+                    const baseValue = getCellBase(cellData);
+                    if (baseValue === 2000 + roomId) {
+                        grid[i][j] = setCellBase(cellData, 0);
+                    }
+                }
+            }
+            
+            // Retirer de la liste locale
+            const index = rooms.findIndex(r => r.id === roomId);
+            if (index > -1) {
+                rooms.splice(index, 1);
+            }
+            
+            // Recharger la page pour mettre à jour l'interface
+            window.location.reload();
+        } else {
+            alert('Erreur lors de la suppression');
+        }
+    } catch (error) {
+        alert('Erreur de connexion');
+    }
+}
+
 // Initialiser au chargement
 initGrid();
+loadSensorsAndEquipments();
 </script>
+
+<!-- Modal pour ajouter une pièce -->
+<div id="room-modal" class="modal">
+    <div class="modal-content">
+        <h3>➕ Ajouter une pièce</h3>
+        <div class="form-group">
+            <label for="room-name-input">Nom de la pièce *</label>
+            <input type="text" id="room-name-input" required>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-success" onclick="addRoom()">Créer</button>
+            <button class="btn btn-cancel" onclick="closeRoomModal()">Annuler</button>
+        </div>
+    </div>
+</div>
 
 {% end %}
