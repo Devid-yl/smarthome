@@ -54,13 +54,13 @@ class EventHistoryHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         house_id = int(house_id)
         user_id = current_user["id"]
 
-        # Paramètres de requête
+        # Query parameters
         limit = min(int(self.get_argument("limit", "50")), 500)
         offset = int(self.get_argument("offset", "0"))
         event_type = self.get_argument("event_type", None)
@@ -72,10 +72,10 @@ class EventHistoryHandler(BaseAPIHandler):
             house = await session.get(House, house_id)
             if not house:
                 self.set_status(404)
-                self.write({"error": "Maison non trouvée"})
+                self.write({"error": "House not found"})
                 return
 
-            # Vérifier que l'utilisateur est propriétaire ou membre
+            # Check that the user is owner or member
             is_owner = house.user_id == user_id
             member_query = select(HouseMember).where(
                 and_(
@@ -89,10 +89,10 @@ class EventHistoryHandler(BaseAPIHandler):
 
             if not is_owner and not is_member:
                 self.set_status(403)
-                self.write({"error": "Accès non autorisé"})
+                self.write({"error": "Access denied"})
                 return
 
-            # Construire la requête
+            # Build query
             query = select(EventHistory).where(
                 EventHistory.house_id == house_id
             )
@@ -172,7 +172,7 @@ class EventTypesHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
         event_types = {
             "equipment_control": "Contrôle d'équipement",
@@ -210,7 +210,7 @@ class EventStatsHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         house_id = int(house_id)
@@ -222,7 +222,7 @@ class EventStatsHandler(BaseAPIHandler):
             house = await session.get(House, house_id)
             if not house:
                 self.set_status(404)
-                self.write({"error": "Maison non trouvée"})
+                self.write({"error": "House not found"})
                 return
 
             is_owner = house.user_id == user_id
@@ -238,10 +238,10 @@ class EventStatsHandler(BaseAPIHandler):
                 is_member = member_result.scalar_one_or_none() is not None
                 if not is_member:
                     self.set_status(403)
-                    self.write({"error": "Accès non autorisé"})
+                    self.write({"error": "Access denied"})
                     return
 
-            # Récupérer les événements de la période
+            # Retrieve les événements de la période
             cutoff_date = datetime.utcnow() - timedelta(days=days)
             query = select(EventHistory).where(
                 and_(
@@ -277,7 +277,7 @@ class EventStatsHandler(BaseAPIHandler):
                 stats["by_day"][day_key] = \
                     stats["by_day"].get(day_key, 0) + 1
 
-            # Ajouter les noms d'utilisateurs
+            # Add les noms d'utilisateurs
             user_names = {}
             for uid in stats["by_user"].keys():
                 user = await session.get(User, uid)

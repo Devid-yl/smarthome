@@ -69,7 +69,7 @@ class RegisterAPIHandler(BaseAPIHandler):
             )
 
         async with async_session_maker() as session:
-            # Vérifier si l'utilisateur existe déjà
+            # Check if user already exists
             result = await session.execute(
                 select(User).where(
                     (User.username == username) | (User.email == email)
@@ -82,7 +82,7 @@ class RegisterAPIHandler(BaseAPIHandler):
                     "Username or email already exists", 409
                 )
 
-            # Créer le nouvel utilisateur
+            # Create le nouvel utilisateur
             hashed_pw = hash_password(password)
             new_user = User(
                 username=username,
@@ -93,17 +93,17 @@ class RegisterAPIHandler(BaseAPIHandler):
                 date_joined=datetime.utcnow()
             )
 
-            # Gérer l'upload de photo de profil si présent
+            # Handle profile photo upload if present
             profile_image = data.get("profile_image")
             if profile_image:
-                # TODO: gérer l'upload base64 ou URL
+                # TODO: handle base64 or URL upload
                 new_user.profile_image = profile_image
 
             session.add(new_user)
             await session.commit()
             await session.refresh(new_user)
 
-            # Auto-login après inscription
+            # Auto-login after registration
             self.set_secure_cookie("uid", str(new_user.id))
             self.set_secure_cookie("uname", new_user.username)
 
@@ -146,7 +146,7 @@ class LoginAPIHandler(BaseAPIHandler):
             if not user.is_active:
                 return self.write_error_json("Account is deactivated", 403)
 
-            # Créer la session
+            # Create la session
             self.set_secure_cookie("uid", str(user.id))
             self.set_secure_cookie("uname", user.username)
 
@@ -303,7 +303,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
             await session.delete(user)
             await session.commit()
 
-            # Supprimer la session
+            # Delete la session
             self.clear_cookie("uid")
             self.clear_cookie("uname")
 
@@ -323,7 +323,7 @@ class UploadProfileImageHandler(BaseAPIHandler):
         if current_user["id"] != int(user_id):
             return self.write_error_json("Unauthorized", 403)
 
-        # Récupérer le fichier uploadé
+        # Retrieve le fichier uploadé
         if "image" not in self.request.files:
             return self.write_error_json("No file uploaded", 400)
 

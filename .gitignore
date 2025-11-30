@@ -71,6 +71,10 @@ ntuser.*
 server.log
 logs/
 
+# Process ID files
+*.pid
+server.pid
+
 # Media uploads (optionnel - à retirer si tu veux versionner les images)
 media/profile_images/*
 !media/profile_images/.gitkeep

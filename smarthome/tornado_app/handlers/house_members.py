@@ -46,21 +46,21 @@ class HouseMembersHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         house_id = int(house_id)
         user_id = current_user["id"]
 
         async with async_session_maker() as session:
-            # Vérifier que l'utilisateur a accès à cette maison
+            # Check that the user has access to this house
             house = await session.get(House, house_id)
             if not house:
                 self.set_status(404)
-                self.write({"error": "Maison non trouvée"})
+                self.write({"error": "House not found"})
                 return
 
-            # Vérifier que l'utilisateur est propriétaire ou membre
+            # Check that the user is owner or member
             is_owner = house.user_id == user_id
             member_query = select(HouseMember).where(
                 and_(
@@ -74,10 +74,10 @@ class HouseMembersHandler(BaseAPIHandler):
 
             if not is_owner and not is_member:
                 self.set_status(403)
-                self.write({"error": "Accès non autorisé"})
+                self.write({"error": "Access denied"})
                 return
 
-            # Récupérer tous les membres
+            # Retrieve tous les membres
             query = select(HouseMember).where(
                 HouseMember.house_id == house_id
             ).options(
@@ -113,7 +113,7 @@ class HouseMembersHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         house_id = int(house_id)
@@ -126,23 +126,23 @@ class HouseMembersHandler(BaseAPIHandler):
 
             if not invited_username:
                 self.set_status(400)
-                self.write({"error": "Nom d'utilisateur requis"})
+                self.write({"error": "Username required"})
                 return
 
             if role not in ["administrateur", "occupant"]:
                 self.set_status(400)
-                self.write({"error": "Rôle invalide"})
+                self.write({"error": "Invalid role"})
                 return
 
             async with async_session_maker() as session:
-                # Vérifier que la maison existe
+                # Check that la maison existe
                 house = await session.get(House, house_id)
                 if not house:
                     self.set_status(404)
-                    self.write({"error": "Maison non trouvée"})
+                    self.write({"error": "House not found"})
                     return
 
-                # Vérifier que l'inviteur est propriétaire ou admin
+                # Check that the inviter is owner or admin
                 is_owner = house.user_id == user_id
                 if not is_owner:
                     member_query = select(HouseMember).where(
@@ -158,12 +158,11 @@ class HouseMembersHandler(BaseAPIHandler):
                     if not is_admin:
                         self.set_status(403)
                         self.write({
-                            "error": "Seuls les propriétaires et "
-                            "administrateurs peuvent inviter"
+                            "error": "Only owners and administrators can invite"
                         })
                         return
 
-                # Trouver l'utilisateur à inviter par username
+                # Find the user to invite by username
                 user_query = select(User).where(
                     User.username == invited_username
                 )
@@ -172,7 +171,7 @@ class HouseMembersHandler(BaseAPIHandler):
 
                 if not invited_user:
                     self.set_status(404)
-                    self.write({"error": "Utilisateur non trouvé"})
+                    self.write({"error": "User not found"})
                     return
                 
                 # Empêcher de s'inviter soi-même
@@ -182,7 +181,7 @@ class HouseMembersHandler(BaseAPIHandler):
                                "inviter vous-même"})
                     return
 
-                # Vérifier si déjà membre ou invité
+                # Check if already member or invited
                 existing_query = select(HouseMember).where(
                     and_(
                         HouseMember.house_id == house_id,
@@ -195,14 +194,14 @@ class HouseMembersHandler(BaseAPIHandler):
                 if existing:
                     if existing.status == 'accepted':
                         self.set_status(400)
-                        self.write({"error": "Utilisateur déjà membre"})
+                        self.write({"error": "User already a member"})
                         return
                     elif existing.status == 'pending':
                         self.set_status(400)
-                        self.write({"error": "Invitation déjà envoyée"})
+                        self.write({"error": "Invitation already sent"})
                         return
 
-                # Créer l'invitation
+                # Create l'invitation
                 new_member = HouseMember(
                     house_id=house_id,
                     user_id=invited_user.id,
@@ -235,7 +234,7 @@ class HouseMembersHandler(BaseAPIHandler):
 
                 self.set_status(201)
                 self.write({
-                    "message": "Invitation envoyée",
+                    "message": "Invitation sent",
                     "member": {
                         "id": new_member.id,
                         "user_id": new_member.user_id,
@@ -247,7 +246,7 @@ class HouseMembersHandler(BaseAPIHandler):
 
         except json.JSONDecodeError:
             self.set_status(400)
-            self.write({"error": "JSON invalide"})
+            self.write({"error": "Invalid JSON"})
         except Exception as e:
             self.set_status(500)
             self.write({"error": str(e)})
@@ -261,7 +260,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         house_id = int(house_id)
@@ -274,20 +273,20 @@ class HouseMemberDetailHandler(BaseAPIHandler):
             new_status = data.get("status")
 
             async with async_session_maker() as session:
-                # Récupérer le membre
+                # Retrieve le membre
                 member = await session.get(HouseMember, member_id)
                 if not member or member.house_id != house_id:
                     self.set_status(404)
-                    self.write({"error": "Membre non trouvé"})
+                    self.write({"error": "Member not found"})
                     return
 
                 house = await session.get(House, house_id)
 
-                # Cas 1: Accepter/refuser une invitation (l'utilisateur invité)
+                # Case 1: Accept/reject an invitation (invited user)
                 if new_status and member.user_id == user_id:
                     if new_status not in ['accepted', 'rejected']:
                         self.set_status(400)
-                        self.write({"error": "Statut invalide"})
+                        self.write({"error": "Invalid status"})
                         return
 
                     old_status = member.status
@@ -319,11 +318,11 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                     })
                     return
 
-                # Cas 2: Changer le rôle (admin ou propriétaire uniquement)
+                # Case 2: Change role (admin or owner only)
                 if new_role:
                     if new_role not in ["administrateur", "occupant"]:
                         self.set_status(400)
-                        self.write({"error": "Rôle invalide"})
+                        self.write({"error": "Invalid role"})
                         return
 
                     # Vérifier les permissions
@@ -343,7 +342,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                         if not is_admin:
                             self.set_status(403)
                             self.write({
-                                "error": "Permission refusée"
+                                "error": "Permission denied"
                             })
                             return
 
@@ -371,17 +370,17 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                     await session.commit()
 
                     self.write({
-                        "message": "Rôle mis à jour",
+                        "message": "Role updated",
                         "role": member.role
                     })
                     return
 
                 self.set_status(400)
-                self.write({"error": "Aucune modification spécifiée"})
+                self.write({"error": "No modification specified"})
 
         except json.JSONDecodeError:
             self.set_status(400)
-            self.write({"error": "JSON invalide"})
+            self.write({"error": "Invalid JSON"})
         except Exception as e:
             self.set_status(500)
             self.write({"error": str(e)})
@@ -391,7 +390,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         house_id = int(house_id)
@@ -399,27 +398,26 @@ class HouseMemberDetailHandler(BaseAPIHandler):
         user_id = current_user["id"]
 
         async with async_session_maker() as session:
-            # Récupérer le membre
+            # Retrieve le membre
             member = await session.get(HouseMember, member_id)
             if not member or member.house_id != house_id:
                 self.set_status(404)
-                self.write({"error": "Membre non trouvé"})
+                self.write({"error": "Member not found"})
                 return
 
             house = await session.get(House, house_id)
 
             # Vérifier les permissions
-            # Cas 1: L'utilisateur se retire lui-même
+            # Case 1: User removes themselves
             if member.user_id == user_id:
                 # Empêcher le propriétaire de se retirer
                 if house.user_id == user_id:
                     self.set_status(403)
                     self.write({
-                        "error": "Le propriétaire ne peut pas "
-                        "se retirer"
+                        "error": "Owner cannot remove themselves"
                     })
                     return
-            # Cas 2: Admin ou propriétaire retire quelqu'un
+            # Case 2: Admin or owner removes someone
             else:
                 is_owner = house.user_id == user_id
                 if not is_owner:
@@ -435,7 +433,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                     is_admin = admin_result.scalar_one_or_none() is not None
                     if not is_admin:
                         self.set_status(403)
-                        self.write({"error": "Permission refusée"})
+                        self.write({"error": "Permission denied"})
                         return
 
             # Enregistrer dans l'historique avant suppression
@@ -464,7 +462,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
             await session.delete(member)
             await session.commit()
 
-            self.write({"message": "Membre supprimé"})
+            self.write({"message": "Member removed"})
 
 
 class MyInvitationsHandler(BaseAPIHandler):
@@ -475,7 +473,7 @@ class MyInvitationsHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         user_id = current_user["id"]
@@ -526,7 +524,7 @@ class SearchUsersHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         search_term = self.get_argument("q", "").strip()
@@ -534,7 +532,7 @@ class SearchUsersHandler(BaseAPIHandler):
 
         if len(search_term) < 2:
             self.set_status(400)
-            self.write({"error": "Minimum 2 caractères requis"})
+            self.write({"error": "Minimum 2 characters required"})
             return
 
         async with async_session_maker() as session:
@@ -574,7 +572,7 @@ class SearchHousesHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         search_term = self.get_argument("q", "").strip()
@@ -583,7 +581,7 @@ class SearchHousesHandler(BaseAPIHandler):
 
         if len(search_term) < 2:
             self.set_status(400)
-            self.write({"error": "Minimum 2 caractères requis"})
+            self.write({"error": "Minimum 2 characters required"})
             return
 
         async with async_session_maker() as session:
@@ -599,7 +597,7 @@ class SearchHousesHandler(BaseAPIHandler):
 
             houses_data = []
             for house in houses:
-                # Vérifier si l'utilisateur a déjà une relation avec cette maison
+                # Check if l'utilisateur a déjà une relation avec cette maison
                 member_query = select(HouseMember).where(
                     and_(
                         HouseMember.house_id == house.id,
@@ -635,7 +633,7 @@ class RequestHouseAccessHandler(BaseAPIHandler):
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
-            self.write({"error": "Non authentifié"})
+            self.write({"error": "Not authenticated"})
             return
 
         house_id = int(house_id)
@@ -646,20 +644,20 @@ class RequestHouseAccessHandler(BaseAPIHandler):
             message = data.get("message", "")
 
             async with async_session_maker() as session:
-                # Vérifier que la maison existe
+                # Check that la maison existe
                 house = await session.get(House, house_id)
                 if not house:
                     self.set_status(404)
-                    self.write({"error": "Maison non trouvée"})
+                    self.write({"error": "House not found"})
                     return
 
                 # Empêcher le propriétaire de demander l'accès
                 if house.user_id == user_id:
                     self.set_status(400)
-                    self.write({"error": "Vous êtes déjà propriétaire de cette maison"})
+                    self.write({"error": "You are already the owner of this house"})
                     return
 
-                # Vérifier si déjà membre ou demande existante
+                # Check if déjà membre ou demande existante
                 existing_query = select(HouseMember).where(
                     and_(
                         HouseMember.house_id == house_id,
@@ -672,11 +670,11 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                 if existing:
                     if existing.status == 'accepted':
                         self.set_status(400)
-                        self.write({"error": "Vous êtes déjà membre de cette maison"})
+                        self.write({"error": "You are already a member of this house"})
                         return
                     elif existing.status == 'pending':
                         self.set_status(400)
-                        self.write({"error": "Demande déjà en attente"})
+                        self.write({"error": "Request already pending"})
                         return
                     elif existing.status == 'rejected':
                         # Réinitialiser la demande
@@ -691,7 +689,7 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                             event_type='member_action',
                             entity_type='member',
                             entity_id=user_id,
-                            description=f"{current_user['username']} a redemandé l'accès",
+                            description=f"{current_user['username']} re-requested access",
                             event_metadata={
                                 "action": "access_request",
                                 "message": message,
@@ -704,12 +702,12 @@ class RequestHouseAccessHandler(BaseAPIHandler):
 
                         self.set_status(201)
                         self.write({
-                            "message": "Demande d'accès renouvelée",
+                            "message": "Access request renewed",
                             "request_id": existing.id
                         })
                         return
 
-                # Créer la demande d'accès (sans invited_by car auto-demande)
+                # Create la demande d'accès (sans invited_by car auto-demande)
                 new_request = HouseMember(
                     house_id=house_id,
                     user_id=user_id,
@@ -726,7 +724,7 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                     event_type='member_action',
                     entity_type='member',
                     entity_id=user_id,
-                    description=f"{current_user['username']} a demandé l'accès",
+                    description=f"{current_user['username']} requested access",
                     event_metadata={
                         "action": "access_request",
                         "message": message
@@ -740,13 +738,13 @@ class RequestHouseAccessHandler(BaseAPIHandler):
 
                 self.set_status(201)
                 self.write({
-                    "message": "Demande d'accès envoyée",
+                    "message": "Access request sent",
                     "request_id": new_request.id
                 })
 
         except json.JSONDecodeError:
             self.set_status(400)
-            self.write({"error": "JSON invalide"})
+            self.write({"error": "Invalid JSON"})
         except Exception as e:
             self.set_status(500)
             self.write({"error": str(e)})

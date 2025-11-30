@@ -43,7 +43,7 @@ class WeatherHandler(BaseAPIHandler):
     async def get(self, house_id):
         """Récupérer la météo basée sur l'adresse de la maison"""
         async with async_session_maker() as session:
-            # Récupérer la maison
+            # Retrieve la maison
             house = await session.get(House, int(house_id))
             if not house:
                 self.write_error_json("House not found", 404)
@@ -60,13 +60,13 @@ class WeatherHandler(BaseAPIHandler):
             # Ex: "Campus, 97157 Pointe-à-Pitre, Guadeloupe"
             # -> "Pointe-à-Pitre"
             address_parts = house.address.split(',')
-            # Par défaut, utiliser l'adresse complète
+            # By default, use the complete address
             city_name = house.address
             
             # Chercher la partie contenant une ville
             # (généralement avant le pays)
             if len(address_parts) >= 2:
-                # Prendre l'avant-dernière partie
+                # Take the second-to-last part
                 if len(address_parts) >= 2:
                     city_name = address_parts[-2].strip()
                 else:
@@ -74,7 +74,7 @@ class WeatherHandler(BaseAPIHandler):
                 # Enlever les codes postaux
                 city_name = re.sub(r'\b\d{5}\b', '', city_name).strip()
             
-            # Obtenir les coordonnées
+            # Get coordinates
             coords = await WeatherService.get_coordinates(city_name)
             if not coords:
                 self.write_error_json(
@@ -83,7 +83,7 @@ class WeatherHandler(BaseAPIHandler):
                 )
                 return
             
-            # Obtenir la météo
+            # Get weather
             weather = await WeatherService.get_weather(
                 coords["latitude"],
                 coords["longitude"]
@@ -95,7 +95,7 @@ class WeatherHandler(BaseAPIHandler):
                 )
                 return
             
-            # Ajouter la localisation
+            # Add la localisation
             weather["location"] = {
                 "city": coords.get("name", ""),
                 "admin1": coords.get("admin1", ""),
@@ -129,7 +129,7 @@ class ValidateAddressHandler(BaseAPIHandler):
                 # Enlever les codes postaux
                 city_name = re.sub(r'\b\d{5}\b', '', city_name).strip()
             
-            # Tenter de géocoder
+            # Attempt to geocode
             coords = await WeatherService.get_coordinates(city_name)
             
             if coords:

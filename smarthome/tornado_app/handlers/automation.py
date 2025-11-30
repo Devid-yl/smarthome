@@ -64,7 +64,7 @@ class AutomationRulesHandler(BaseAPIHandler):
             custom_rules = result.scalars().all()
             
             for rule in custom_rules:
-                # Récupérer le capteur
+                # Retrieve le capteur
                 sensor = await session.get(Sensor, rule.sensor_id)
                 if not sensor or not sensor.is_active or sensor.value is None:
                     continue
@@ -278,7 +278,7 @@ class AutomationRulesHandler(BaseAPIHandler):
             from .websocket import RealtimeHandler
             for action in actions_taken:
                 if action.get("equipment_id"):
-                    # Récupérer l'équipement pour avoir son type et house_id
+                    # Retrieve l'équipement pour avoir son type et house_id
                     equip = await session.get(Equipment, action["equipment_id"])
                     if equip:
                         RealtimeHandler.broadcast_equipment_update(

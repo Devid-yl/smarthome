@@ -252,7 +252,7 @@ class UserPositionHandler(BaseAPIHandler):
         en fonction de la position de l'utilisateur.
         Détecte la présence sur les CASES où sont placés les capteurs.
         """
-        # Récupérer toutes les positions actives dans cette maison
+        # Retrieve toutes les positions actives dans cette maison
         query = select(UserPosition).where(and_(
             UserPosition.house_id == house_id,
             UserPosition.is_active == True  # noqa: E712
@@ -268,7 +268,7 @@ class UserPositionHandler(BaseAPIHandler):
                 users_per_cell[cell_key] = 0
             users_per_cell[cell_key] += 1
         
-        # Récupérer tous les capteurs de présence
+        # Retrieve tous les capteurs de présence
         query = select(Sensor).where(and_(
             Sensor.house_id == house_id,
             Sensor.type == "presence"
@@ -283,7 +283,7 @@ class UserPositionHandler(BaseAPIHandler):
                 sensor_cells = []
                 for row_idx, row in enumerate(house.grid):
                     for col_idx, cell in enumerate(row):
-                        # Vérifier si le capteur est dans cette cellule
+                        # Check if le capteur est dans cette cellule
                         if isinstance(cell, dict):
                             cell_sensors = cell.get("sensors", [])
                             if sensor.id in cell_sensors:
@@ -330,12 +330,12 @@ class UserPositionHandler(BaseAPIHandler):
         Met à jour les capteurs de présence après qu'un utilisateur
         quitte la simulation.
         """
-        # Récupérer la maison
+        # Retrieve la maison
         house = await session.get(House, house_id)
         if not house:
             return
         
-        # Récupérer toutes les positions actives restantes
+        # Retrieve toutes les positions actives restantes
         query = select(UserPosition).where(and_(
             UserPosition.house_id == house_id,
             UserPosition.is_active == True,  # noqa: E712
@@ -352,7 +352,7 @@ class UserPositionHandler(BaseAPIHandler):
                 users_per_cell[cell_key] = 0
             users_per_cell[cell_key] += 1
         
-        # Récupérer tous les capteurs de présence
+        # Retrieve tous les capteurs de présence
         query = select(Sensor).where(and_(
             Sensor.house_id == house_id,
             Sensor.type == "presence"
@@ -408,7 +408,7 @@ class UserPositionHandler(BaseAPIHandler):
         """
         from ..models import Equipment, EventHistory
         
-        # Récupérer les règles actives pour ce capteur
+        # Retrieve les règles actives pour ce capteur
         query = select(AutomationRule).where(and_(
             AutomationRule.sensor_id == sensor.id,
             AutomationRule.is_active == True  # noqa: E712

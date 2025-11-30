@@ -62,7 +62,7 @@ class HousesAPIHandler(BaseAPIHandler):
             from sqlalchemy import and_
             from ..models import HouseMember
             
-            # Récupérer les maisons dont l'utilisateur est propriétaire
+            # Retrieve les maisons dont l'utilisateur est propriétaire
             owned_result = await session.execute(
                 select(House)
                 .where(House.user_id == current_user["id"])
@@ -70,7 +70,7 @@ class HousesAPIHandler(BaseAPIHandler):
             )
             owned_houses = owned_result.scalars().all()
 
-            # Récupérer les maisons dont l'utilisateur est membre accepté
+            # Retrieve les maisons dont l'utilisateur est membre accepté
             member_result = await session.execute(
                 select(HouseMember)
                 .where(
@@ -85,7 +85,7 @@ class HousesAPIHandler(BaseAPIHandler):
 
             houses_list = []
             
-            # Ajouter les maisons possédées
+            # Add les maisons possédées
             for h in owned_houses:
                 houses_list.append({
                     "id": h.id,
@@ -105,7 +105,7 @@ class HousesAPIHandler(BaseAPIHandler):
                     ]
                 })
 
-            # Ajouter les maisons partagées
+            # Add les maisons partagées
             for membership in memberships:
                 if membership.house:
                     # Charger les rooms
@@ -162,7 +162,7 @@ class HousesAPIHandler(BaseAPIHandler):
             )
 
         async with async_session_maker() as session:
-            # Créer une grille avec un contour de murs automatique
+            # Create une grille avec un contour de murs automatique
             # Grille réelle: (length+2) x (width+2) pour le contour
             grid = []
             for i in range(length + 2):
@@ -406,7 +406,7 @@ class RoomsAPIHandler(BaseAPIHandler):
             return self.write_error_json("Not authenticated", 401)
 
         async with async_session_maker() as session:
-            # Vérifier que la maison appartient à l'utilisateur
+            # Check that la maison appartient à l'utilisateur
             result = await session.execute(
                 select(House).where(
                     House.id == int(house_id),
@@ -418,7 +418,7 @@ class RoomsAPIHandler(BaseAPIHandler):
             if not house:
                 return self.write_error_json("House not found", 404)
 
-            # Récupérer les pièces
+            # Retrieve les pièces
             result = await session.execute(
                 select(Room).where(Room.house_id == int(house_id))
             )
@@ -450,7 +450,7 @@ class RoomsAPIHandler(BaseAPIHandler):
             return self.write_error_json("Room name is required", 400)
 
         async with async_session_maker() as session:
-            # Vérifier que la maison appartient à l'utilisateur
+            # Check that la maison appartient à l'utilisateur
             result = await session.execute(
                 select(House).where(
                     House.id == int(house_id),
@@ -462,7 +462,7 @@ class RoomsAPIHandler(BaseAPIHandler):
             if not house:
                 return self.write_error_json("House not found", 404)
 
-            # Créer la pièce
+            # Create la pièce
             new_room = Room(
                 house_id=int(house_id),
                 name=name

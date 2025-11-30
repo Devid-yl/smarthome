@@ -10,7 +10,7 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
     """
     WebSocket pour les mises à jour en temps réel des capteurs et équipements
     """
-    # Ensemble de tous les clients connectés
+    # Set of all connected clients
     clients: Set['RealtimeHandler'] = set()
     
     def check_origin(self, origin):

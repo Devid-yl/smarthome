@@ -52,7 +52,7 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
                 self.write("<h1>404 - Maison introuvable</h1>")
                 return
             
-            # Sauvegarder la grille dans la base de données
+            # Save grid to database
             import json
             try:
                 grid = json.loads(grid_data)
@@ -63,5 +63,5 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
                 self.write("<h1>400 - Données de grille invalides</h1>")
                 return
             
-            # Rediriger vers la page de détails de la maison
+            # Redirect to house details page
             self.redirect(f"/app/house.html?id={house_id}")

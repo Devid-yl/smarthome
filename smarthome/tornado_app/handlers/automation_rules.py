@@ -94,7 +94,7 @@ class AutomationRulesListHandler(BaseAPIHandler):
         try:
             data = json.loads(self.request.body)
         except json.JSONDecodeError:
-            self.write_error_json("JSON invalide", 400)
+            self.write_error_json("Invalid JSON", 400)
             return
 
         required = ["house_id", "name", "sensor_id",
@@ -113,7 +113,7 @@ class AutomationRulesListHandler(BaseAPIHandler):
                 sensor_id = int(data["sensor_id"])
                 equipment_id = int(data["equipment_id"])
                 
-                # Vérifier que le capteur et l'équipement existent
+                # Check that le capteur et l'équipement existent
                 sensor = await session.get(Sensor, sensor_id)
                 equipment = await session.get(Equipment, equipment_id)
                 
@@ -142,7 +142,7 @@ class AutomationRulesListHandler(BaseAPIHandler):
                 await session.refresh(rule)
 
                 self.write_json({
-                    "message": "Règle créée",
+                    "message": "Rule created",
                     "rule": {
                         "id": rule.id,
                         "name": rule.name
@@ -205,7 +205,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
         try:
             data = json.loads(self.request.body)
         except json.JSONDecodeError:
-            self.write_error_json("JSON invalide", 400)
+            self.write_error_json("Invalid JSON", 400)
             return
 
         async with async_session_maker() as session:
@@ -223,7 +223,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
             if "is_active" in data:
                 rule.is_active = data["is_active"]
             if "sensor_id" in data:
-                # Vérifier que le capteur existe
+                # Check that le capteur existe
                 sensor = await session.get(Sensor, int(data["sensor_id"]))
                 if sensor:
                     rule.sensor_id = int(data["sensor_id"])
@@ -232,7 +232,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
             if "condition_value" in data:
                 rule.condition_value = float(data["condition_value"])
             if "equipment_id" in data:
-                # Vérifier que l'équipement existe
+                # Check that l'équipement existe
                 equipment = await session.get(
                     Equipment, int(data["equipment_id"])
                 )
@@ -243,7 +243,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
 
             await session.commit()
 
-            self.write_json({"message": "Règle mise à jour"})
+            self.write_json({"message": "Rule updated"})
 
     async def delete(self, rule_id):
         """Supprimer une règle"""
@@ -257,4 +257,4 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
             await session.delete(rule)
             await session.commit()
 
-            self.write_json({"message": "Règle supprimée"})
+            self.write_json({"message": "Rule deleted"})
