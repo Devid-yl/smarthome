@@ -15,11 +15,11 @@ class UserPositionHandler(BaseAPIHandler):
 
     async def get(self, house_id: int):
         """Get all user positions in a house."""
-        user_id = self.get_secure_cookie("uid")
-        if not user_id:
+        user_id_cookie = self.get_secure_cookie("uid")
+        if not user_id_cookie:
             self.write_error_json("Not authenticated", 401)
             return
-        user_id = int(user_id.decode())
+        user_id = int(user_id_cookie.decode())
         house_id = int(house_id)
 
         async with async_session_maker() as session:
@@ -59,11 +59,11 @@ class UserPositionHandler(BaseAPIHandler):
 
     async def post(self, house_id: int):
         """Update user position in a house. Body: {"x": int, "y": int}"""
-        user_id = self.get_secure_cookie("uid")
-        if not user_id:
+        user_id_cookie = self.get_secure_cookie("uid")
+        if not user_id_cookie:
             self.write_error_json("Not authenticated", 401)
             return
-        user_id = int(user_id.decode())
+        user_id = int(user_id_cookie.decode())
         house_id = int(house_id)
 
         async with async_session_maker() as session:
@@ -96,8 +96,8 @@ class UserPositionHandler(BaseAPIHandler):
                 grid_height = len(house.grid)
                 grid_width = len(house.grid[0]) if grid_height > 0 else 0
             else:
-                grid_height = house.length
-                grid_width = house.width
+                grid_height = house.length  # type: ignore
+                grid_width = house.width  # type: ignore
 
             if not (0 <= x < grid_width and 0 <= y < grid_height):
                 self.write_error_json(
@@ -116,10 +116,10 @@ class UserPositionHandler(BaseAPIHandler):
 
             if position:
                 # Update existing position
-                position.x = x
-                position.y = y
-                position.is_active = True
-                position.last_update = datetime.utcnow()
+                position.x = x  # type: ignore
+                position.y = y  # type: ignore
+                position.is_active = True  # type: ignore
+                position.last_update = datetime.utcnow()  # type: ignore
             else:
                 # Create new position
                 position = UserPosition(
@@ -135,6 +135,9 @@ class UserPositionHandler(BaseAPIHandler):
 
             # Get user info for broadcast
             user = await session.get(User, user_id)
+            if not user:
+                self.write_error_json("User not found", 404)
+                return
 
             # DÉTECTION AUTOMATIQUE DE PRÉSENCE
             # Trouver la pièce où se trouve l'utilisateur
@@ -160,6 +163,7 @@ class UserPositionHandler(BaseAPIHandler):
                 except Exception as e:
                     print(f"Error broadcasting position: {e}")
 
+            # user is guaranteed to exist here due to check above
             self.write({
                 "success": True,
                 "position": {
@@ -172,12 +176,12 @@ class UserPositionHandler(BaseAPIHandler):
             })
 
     async def delete(self, house_id: int):
-        """Deactivate user position (user leaves simulation)."""
-        user_id = self.get_secure_cookie("uid")
-        if not user_id:
+        """Deactivate user position (user leaves house)."""
+        user_id_cookie = self.get_secure_cookie("uid")
+        if not user_id_cookie:
             self.write_error_json("Not authenticated", 401)
             return
-        user_id = int(user_id.decode())
+        user_id = int(user_id_cookie.decode())
         house_id = int(house_id)
 
         async with async_session_maker() as session:
@@ -198,7 +202,7 @@ class UserPositionHandler(BaseAPIHandler):
             position = result.scalar_one_or_none()
 
             if position:
-                position.is_active = False
+                position.is_active = False  # type: ignore
                 await session.commit()
 
                 # Broadcast deactivation
