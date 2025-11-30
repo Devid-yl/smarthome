@@ -1,0 +1,122 @@
+/* Invitations page styles - Common styles moved to base.css */
+        
+        .container { 
+            max-width: 900px; 
+            margin: 2rem auto; 
+            padding: 0 1.5rem; 
+        }
+        
+        .header { 
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        .invitation-card {
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: box-shadow 0.2s;
+        }
+
+        .invitation-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .invitation-info h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        .invitation-info p {
+            margin: 0.25rem 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge-admin { background: #dbeafe; color: #1e40af; }
+        .badge-occupant { background: #f3f4f6; color: #374151; }
+        
+        .invitation-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn { 
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .btn-success { 
+            background: var(--success-color); 
+            color: white; 
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger { 
+            background: var(--danger-color); 
+            color: white; 
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary { 
+            background: white; 
+            color: var(--text-main); 
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .invitation-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
