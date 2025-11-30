@@ -1,12 +1,10 @@
 import json
-import tornado.web
 from sqlalchemy import select
 from ..models import Sensor, EventHistory
 from ..database import async_session_maker
 from datetime import datetime
 from .websocket import RealtimeHandler
 from .base import BaseAPIHandler
-
 
 
 class SensorsListHandler(BaseAPIHandler):

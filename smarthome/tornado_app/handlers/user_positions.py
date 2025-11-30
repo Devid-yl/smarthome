@@ -2,38 +2,12 @@
 import json
 from datetime import datetime
 from sqlalchemy import select, and_
-import tornado.web
 
 from ..database import async_session_maker
-from ..models import UserPosition, House, User, Sensor, Room, AutomationRule
+from ..models import UserPosition, House, User, Sensor, AutomationRule
 from ..utils.permissions import get_user_house_permission, PermissionLevel
 from .websocket import RealtimeHandler
 from .base import BaseAPIHandler
-
-
-class BaseAPIHandler(tornado.web.RequestHandler):
-    """Base handler pour les API REST."""
-
-    def check_xsrf_cookie(self):
-        """Disable XSRF for REST APIs."""
-        pass
-
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Methods",
-                        "GET, POST, PUT, DELETE, OPTIONS")
-        self.set_header("Access-Control-Allow-Headers",
-                        "Content-Type")
-
-    def options(self, *args):
-        self.set_status(204)
-        self.finish()
-
-    def write_error_json(self, message, status=400):
-        """Write error response."""
-        self.set_status(status)
-        self.write({"error": message})
 
 
 class UserPositionHandler(BaseAPIHandler):
@@ -116,14 +90,15 @@ class UserPositionHandler(BaseAPIHandler):
                 self.write_error_json("House not found", 404)
                 return
 
-            # Validate position is within grid bounds (use actual grid size, not house.width/length)
+            # Validate position within grid bounds
+            # (use actual grid size, not house.width/length)
             if house.grid:
                 grid_height = len(house.grid)
                 grid_width = len(house.grid[0]) if grid_height > 0 else 0
             else:
                 grid_height = house.length
                 grid_width = house.width
-            
+
             if not (0 <= x < grid_width and 0 <= y < grid_height):
                 self.write_error_json(
                     f"Position out of bounds (0-{grid_width-1}, "
@@ -260,7 +235,7 @@ class UserPositionHandler(BaseAPIHandler):
         ))
         result = await session.execute(query)
         all_positions = result.scalars().all()
-        
+
         # Grouper les positions par cellule
         users_per_cell = {}
         for pos in all_positions:

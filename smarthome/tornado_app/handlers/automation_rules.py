@@ -2,13 +2,11 @@
 API handlers for automation rules.
 """
 import json
-import tornado.web
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from ..models import AutomationRule, Sensor, Equipment
 from ..database import async_session_maker
 from .base import BaseAPIHandler
-
 
 
 class AutomationRulesListHandler(BaseAPIHandler):
