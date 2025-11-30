@@ -21,6 +21,9 @@ from .handlers.users_api import (
     CurrentUserAPIHandler, UserProfileAPIHandler,
     UploadProfileImageHandler
 )
+from .handlers.auth_jwt_api import (
+    LoginJWTHandler, RegisterJWTHandler
+)
 from .handlers.houses_api import (
     HousesAPIHandler, HouseDetailAPIHandler,
     RoomsAPIHandler, RoomDetailAPIHandler
@@ -99,10 +102,17 @@ def make_app():
         (r"/api/status", SensorToEquipmentStatusHandler),
         
         # API REST - Authentification et utilisateurs
+        # Cookie-based auth (legacy)
         (r"/api/auth/register", RegisterAPIHandler),
         (r"/api/auth/login", LoginAPIHandler),
         (r"/api/auth/logout", LogoutAPIHandler),
         (r"/api/auth/me", CurrentUserAPIHandler),
+        
+        # JWT-based auth (REST API compliant)
+        (r"/api/auth/jwt/login", LoginJWTHandler),
+        (r"/api/auth/jwt/register", RegisterJWTHandler),
+        
+        # User profile
         (r"/api/users/([0-9]+)", UserProfileAPIHandler),
         (r"/api/users/([0-9]+)/upload-image", UploadProfileImageHandler),
         

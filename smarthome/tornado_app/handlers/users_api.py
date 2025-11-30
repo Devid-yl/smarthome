@@ -31,6 +31,21 @@ class BaseAPIHandler(tornado.web.RequestHandler):
         self.finish()
 
     def get_current_user(self):
+        """Get current user from JWT token or cookie fallback."""
+        # Try JWT authentication first
+        auth_header = self.request.headers.get("Authorization")
+        if auth_header:
+            from ..jwt_auth import extract_token_from_header, verify_token
+            token = extract_token_from_header(auth_header)
+            if token:
+                payload = verify_token(token)
+                if payload:
+                    return {
+                        "id": payload.get("user_id"),
+                        "email": payload.get("email")
+                    }
+        
+        # Fallback to cookie-based auth
         user_id = self.get_secure_cookie("uid")
         if not user_id:
             return None
