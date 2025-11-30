@@ -2,7 +2,7 @@ import tornado.web
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from ..database import async_session_maker
-from ..models import House, Room
+from ..models import House
 
 
 class EditHouseInsideHandler(tornado.web.RequestHandler):

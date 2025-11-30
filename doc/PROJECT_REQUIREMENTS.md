@@ -6,22 +6,22 @@ Ce document démontre la conformité complète du projet SmartHome avec les exig
 
 ---
 
-## ✅ Technologies Requises (100% Conforme)
+##  Technologies Requises (100% Conforme)
 
 ### Backend (Services)
 | Exigence | Technologie Utilisée | Status | Fichier de référence |
 |----------|---------------------|--------|---------------------|
-| Python Framework | **Tornado 6.4+** | ✅ | `requirements.txt`, `app.py` |
-| Base de données | **PostgreSQL 15+** | ✅ | `database.py`, `.env` |
-| ORM | **SQLAlchemy 2.0** (async) | ✅ | `models.py` |
+| Python Framework | **Tornado 6.4+** |  | `requirements.txt`, `app.py` |
+| Base de données | **PostgreSQL 15+** |  | `database.py`, `.env` |
+| ORM | **SQLAlchemy 2.0** (async) |  | `models.py` |
 
 ### Frontend (Applications)
 | Exigence | Technologie Utilisée | Status | Fichiers |
 |----------|---------------------|--------|----------|
-| HTML/CSS | HTML5 + CSS3 | ✅ | `static/app/*.html`, `static/css/*.css` |
-| JavaScript | ES6+ Vanilla JS | ✅ | `static/app/*.js` |
-| Fetch API | ✅ Utilisé | ✅ | `house.js`, `profile.html` |
-| WebSocket | ✅ Implémenté | ✅ | `realtime.js`, `websocket.py` |
+| HTML/CSS | HTML5 + CSS3 |  | `static/app/*.html`, `static/css/*.css` |
+| JavaScript | ES6+ Vanilla JS |  | `static/app/*.js` |
+| Fetch API |  Utilisé |  | `house.js`, `profile.html` |
+| WebSocket |  Implémenté |  | `realtime.js`, `websocket.py` |
 
 ---
 
@@ -29,32 +29,32 @@ Ce document démontre la conformité complète du projet SmartHome avec les exig
 
 ### 1. Gestion des Utilisateurs (6 points)
 
-#### ✅ Inscription
+####  Inscription
 - **Endpoint**: `POST /api/auth/register`
 - **Fichier**: `handlers/users_api.py` (RegisterAPIHandler)
 - **Champs**: username, email, password, phone_number
 - **Frontend**: `static/app/register.html`
 
-#### ✅ Connexion
+####  Connexion
 - **Endpoint**: `POST /api/auth/login`
 - **Fichier**: `handlers/users_api.py` (LoginAPIHandler)
 - **Sécurité**: Cookies HTTPOnly + bcrypt hashing
 - **Frontend**: `static/app/login.html`
 
-#### ✅ Profil avec photo
+####  Profil avec photo
 - **Endpoint**: `GET/PUT /api/users/me`
 - **Upload**: `POST /api/upload-profile-image`
 - **Fichier**: `handlers/users_api.py` (ProfileHandler, UploadProfileImageHandler)
 - **Frontend**: `static/app/profile.html`
 - **Stockage**: `media/profile_images/`
 
-#### ✅ Déplacement entre maisons/pièces
+####  Déplacement entre maisons/pièces
 - **Endpoint**: `POST /api/houses/{id}/positions`
 - **Fichier**: `handlers/user_positions.py` (UserPositionHandler)
 - **Frontend**: `static/app/house.js` (fonction `handleCellClick()`)
 - **Temps réel**: WebSocket broadcast des positions
 
-#### ✅ API REST complète
+####  API REST complète
 ```
 POST   /api/auth/register         - Inscription
 POST   /api/auth/login            - Connexion
@@ -70,7 +70,7 @@ POST   /api/upload-profile-image  - Upload photo
 
 ### 2. Gestion de la Maison (8 points)
 
-#### ✅ Maison et pièces : Création, suppression, édition
+####  Maison et pièces : Création, suppression, édition
 
 ##### Maisons
 - **Création**: `POST /api/houses`
@@ -87,7 +87,7 @@ POST   /api/upload-profile-image  - Upload photo
 - **Fichier**: `handlers/houses_api.py` (RoomsHandler, RoomDetailHandler)
 - **Modèle**: `models.py` (classe Room)
 
-#### ✅ Capteurs et équipements : Création, suppression, édition
+####  Capteurs et équipements : Création, suppression, édition
 
 ##### Capteurs (Sensors)
 - **Création**: `POST /api/sensors`
@@ -107,7 +107,7 @@ POST   /api/upload-profile-image  - Upload photo
 - **Fichier**: `handlers/equipments.py` (EquipmentsHandler, EquipmentDetailHandler)
 - **Types**: shutter, door, light, sound_system
 
-#### ✅ Membres : Invitation, suppression, changement de rôle
+####  Membres : Invitation, suppression, changement de rôle
 - **Modèle**: `models.py` (classe HouseMember)
 - **Table**: `house_members` (house_id, user_id, role, status, invited_by)
 - **Rôles**: 'administrateur', 'occupant'
@@ -125,7 +125,7 @@ POST   /api/upload-profile-image  - Upload photo
   - `handlers/invitations.py` (MyInvitationsHandler, AcceptInvitationHandler)
 - **Frontend**: `static/app/members.html`, `static/app/invitations.html`
 
-#### ✅ Historique : Journalisation des événements
+####  Historique : Journalisation des événements
 - **Modèle**: `models.py` (classe EventHistory)
 - **Table**: `event_history` (id, house_id, user_id, event_type, entity_type, entity_id, description, event_metadata, created_at, ip_address)
 - **Types d'événements**:
@@ -146,7 +146,7 @@ POST   /api/upload-profile-image  - Upload photo
   - Rétention intelligente (7j peu importants, 90j importants)
   - Pagination et filtres (type, date, utilisateur)
 
-#### ✅ API REST complète
+####  API REST complète
 ```
 # Maisons
 POST   /api/houses                    - Créer maison
@@ -181,7 +181,7 @@ GET    /api/event-types               - Types événements
 
 ### 3. Capteurs et Équipements (6 points)
 
-#### ✅ Capteurs simulés
+####  Capteurs simulés
 | Type | Unité | Description | Fichier |
 |------|-------|-------------|---------|
 | **temperature** | °C | Température ambiante | `models.py` (Sensor) |
@@ -199,7 +199,7 @@ DELETE /api/sensors/{id}         - Supprimer capteur
 PATCH  /api/sensors/{id}/value   - Mettre à jour valeur
 ```
 
-#### ✅ Équipements contrôlés
+####  Équipements contrôlés
 | Type | États | Description | API dédiée |
 |------|-------|-------------|------------|
 | **shutter** | open/closed | Volets roulants | `/api/equipments?type=shutter` |
@@ -229,7 +229,7 @@ PUT    /api/equipments/{id}/roles          - Gérer permissions
 
 ### 4. Interface Client (3 points)
 
-#### ✅ Tableau de bord live
+####  Tableau de bord live
 - **Fichier**: `static/app/dashboard.html`
 - **Fonctionnalités**:
   - Liste des maisons de l'utilisateur
@@ -238,7 +238,7 @@ PUT    /api/equipments/{id}/roles          - Gérer permissions
   - Système d'invitations avec badge de notification
   - Création/édition de maisons
 
-#### ✅ Contrôle manuel
+####  Contrôle manuel
 - **Fichier**: `static/app/house.html` + `house.js`
 - **Équipements**:
   - Boutons on/off pour lumières et son
@@ -251,7 +251,7 @@ PUT    /api/equipments/{id}/roles          - Gérer permissions
   - Modification manuelle (simulation)
   - Icônes par type (🌡️💡🌧️👤)
 
-#### ✅ Indicateurs météo et présence
+####  Indicateurs météo et présence
 - **Météo**:
   - Intégration API externe Open-Meteo
   - Endpoint: `GET /api/weather/{house_id}`
@@ -267,7 +267,7 @@ PUT    /api/equipments/{id}/roles          - Gérer permissions
   - Limitation pseudo à 3 caractères pour affichage compact
   - Temps réel via WebSocket
 
-#### ✅ Journal des événements
+####  Journal des événements
 - **Fichier**: `static/app/history.html`
 - **Affichage**:
   - Liste chronologique (plus récents d'abord)
@@ -276,7 +276,7 @@ PUT    /api/equipments/{id}/roles          - Gérer permissions
   - Statistiques (événements par type, par jour, par utilisateur)
   - Icônes par type d'événement
 
-#### ✅ Graphiques
+####  Graphiques
 - **Fichier**: `static/app/history.html`
 - **Graphiques disponibles**:
   - Distribution par type d'événement (bar chart)
@@ -288,12 +288,12 @@ PUT    /api/equipments/{id}/roles          - Gérer permissions
 
 ### 5. Service de Suivi en Live (2 points)
 
-#### ✅ WebSocket implémenté
+####  WebSocket implémenté
 - **Fichier**: `handlers/websocket.py` (HouseWebSocketHandler)
 - **URL**: `ws://localhost:8001/ws/{house_id}`
 - **Frontend**: `static/app/realtime.js`
 
-#### ✅ Transmission en temps réel
+####  Transmission en temps réel
 **Types de messages**:
 1. **equipment_update**: Changement d'état équipement
 2. **sensor_update**: Nouvelle valeur capteur
@@ -337,7 +337,7 @@ function connectWebSocket() {
 
 ### 6. Règles d'Automatisation (Bonus)
 
-#### ✅ Scénarios (conditions + actions)
+####  Scénarios (conditions + actions)
 - **Modèle**: `models.py` (classe AutomationRule)
 - **Table**: `automation_rules`
 - **Structure**:
@@ -374,7 +374,7 @@ POST   /api/automation/trigger          - Déclencher manuellement
 
 ## 🌐 Fonctionnalités Externes (5/5 points)
 
-### ✅ Intégration API Météo Réelle
+###  Intégration API Météo Réelle
 
 #### Configuration
 - **API**: Open-Meteo (https://open-meteo.com/)
@@ -438,7 +438,7 @@ class WeatherService:
 
 ## 💾 Système d'Information (5/5 points)
 
-### ✅ Base de données conforme
+###  Base de données conforme
 
 #### Table Utilisateur (User)
 ```sql
@@ -582,50 +582,50 @@ CREATE TABLE user_positions (
 
 | Catégorie | Points | Status | Justification |
 |-----------|--------|--------|---------------|
-| **Fonctionnalités internes** | 25/25 | ✅ | Toutes implémentées et démontrées |
-| - Gestion utilisateurs | 6/6 | ✅ | Inscription, login, profil, photo, déplacement, API |
-| - Gestion maison | 8/8 | ✅ | CRUD maisons/pièces, capteurs, équipements, membres, historique |
-| - Capteurs et équipements | 6/6 | ✅ | 4 types capteurs, 4 types équipements, APIs dédiées |
-| - Interface client | 3/3 | ✅ | Dashboard, contrôle, météo, présence, historique, graphiques |
-| - Service live | 2/2 | ✅ | WebSocket complet avec 6 types de messages |
-| **Fonctionnalités externes** | 5/5 | ✅ | API météo Open-Meteo intégrée |
-| **Système d'information** | 5/5 | ✅ | 9 tables PostgreSQL conformes + relations |
-| **TOTAL** | **35/35** | ✅ | **Objectifs dépassés** |
+| **Fonctionnalités internes** | 25/25 |  | Toutes implémentées et démontrées |
+| - Gestion utilisateurs | 6/6 |  | Inscription, login, profil, photo, déplacement, API |
+| - Gestion maison | 8/8 |  | CRUD maisons/pièces, capteurs, équipements, membres, historique |
+| - Capteurs et équipements | 6/6 |  | 4 types capteurs, 4 types équipements, APIs dédiées |
+| - Interface client | 3/3 |  | Dashboard, contrôle, météo, présence, historique, graphiques |
+| - Service live | 2/2 |  | WebSocket complet avec 6 types de messages |
+| **Fonctionnalités externes** | 5/5 |  | API météo Open-Meteo intégrée |
+| **Système d'information** | 5/5 |  | 9 tables PostgreSQL conformes + relations |
+| **TOTAL** | **35/35** |  | **Objectifs dépassés** |
 
 ---
 
 ## 🎁 Fonctionnalités Bonus
 
 ### Sécurité avancée
-- ✅ Authentication JWT (en plus des cookies)
-- ✅ Middleware d'authentification centralisé
-- ✅ Validation des permissions par rôle
-- ✅ Protection CSRF désactivée pour API REST
-- ✅ Cookies HTTPOnly + Secure
+-  Authentication JWT (en plus des cookies)
+-  Middleware d'authentification centralisé
+-  Validation des permissions par rôle
+-  Protection CSRF désactivée pour API REST
+-  Cookies HTTPOnly + Secure
 
 ### Optimisations
-- ✅ SQLAlchemy async (performance x3)
-- ✅ Driver asyncpg (le plus rapide pour PostgreSQL)
-- ✅ Nettoyage automatique historique (>1000 événements)
-- ✅ Indexes sur colonnes fréquemment utilisées
-- ✅ Pagination sur tous les endpoints de liste
+-  SQLAlchemy async (performance x3)
+-  Driver asyncpg (le plus rapide pour PostgreSQL)
+-  Nettoyage automatique historique (>1000 événements)
+-  Indexes sur colonnes fréquemment utilisées
+-  Pagination sur tous les endpoints de liste
 
 ### Expérience utilisateur
-- ✅ Interface responsive (mobile-friendly)
-- ✅ Éditeur graphique de grille maison
-- ✅ Système d'invitations avec notifications
-- ✅ Recherche de maisons publiques
-- ✅ Validation d'adresse en temps réel (geocoding)
-- ✅ Limitation pseudo à 3 caractères pour affichage compact
-- ✅ Icônes météo dynamiques
+-  Interface responsive (mobile-friendly)
+-  Éditeur graphique de grille maison
+-  Système d'invitations avec notifications
+-  Recherche de maisons publiques
+-  Validation d'adresse en temps réel (geocoding)
+-  Limitation pseudo à 3 caractères pour affichage compact
+-  Icônes météo dynamiques
 
 ### Code quality
-- ✅ Architecture MVC claire (Models, Handlers, Services)
-- ✅ Docstrings complètes en anglais
-- ✅ Type hints Python
-- ✅ Code commenté et documenté
-- ✅ Variables d'environnement (.env)
-- ✅ Gestion d'erreurs robuste
+-  Architecture MVC claire (Models, Handlers, Services)
+-  Docstrings complètes en anglais
+-  Type hints Python
+-  Code commenté et documenté
+-  Variables d'environnement (.env)
+-  Gestion d'erreurs robuste
 
 ---
 
@@ -634,13 +634,13 @@ CREATE TABLE user_positions (
 ```
 smarthome/
 ├── smarthome/tornado_app/
-│   ├── models.py                    # ✅ 9 modèles SQLAlchemy
-│   ├── database.py                  # ✅ Config PostgreSQL async
-│   ├── auth.py                      # ✅ Hachage bcrypt
-│   ├── config.py                    # ✅ Variables environnement
-│   ├── app.py                       # ✅ Routes + serveur Tornado
+│   ├── models.py                    #  9 modèles SQLAlchemy
+│   ├── database.py                  #  Config PostgreSQL async
+│   ├── auth.py                      #  Hachage bcrypt
+│   ├── config.py                    #  Variables environnement
+│   ├── app.py                       #  Routes + serveur Tornado
 │   │
-│   ├── handlers/                    # ✅ 15 fichiers handlers
+│   ├── handlers/                    #  15 fichiers handlers
 │   │   ├── users_api.py             # Auth + profil
 │   │   ├── houses_api.py            # Maisons + pièces
 │   │   ├── sensors.py               # Capteurs
@@ -654,15 +654,15 @@ smarthome/
 │   │   ├── websocket.py             # WebSocket temps réel
 │   │   └── ...
 │   │
-│   ├── services/                    # ✅ Services métier
+│   ├── services/                    #  Services métier
 │   │   └── weather_service.py       # Open-Meteo API
 │   │
-│   └── utils/                       # ✅ Utilitaires
+│   └── utils/                       #  Utilitaires
 │       ├── grid_layers.py           # Système grille layered
 │       └── permissions.py           # Validation permissions
 │
 ├── static/
-│   ├── app/                         # ✅ Frontend SPA
+│   ├── app/                         #  Frontend SPA
 │   │   ├── login.html               # Connexion
 │   │   ├── register.html            # Inscription
 │   │   ├── dashboard.html           # Liste maisons
@@ -675,19 +675,19 @@ smarthome/
 │   │   ├── realtime.js              # WebSocket client
 │   │   └── weather.js               # Widget météo
 │   │
-│   └── css/                         # ✅ Styles CSS3
+│   └── css/                         #  Styles CSS3
 │       ├── base.css                 # Styles communs
 │       ├── dashboard.css            # Dashboard
 │       ├── house.css                # Page maison
 │       └── ...
 │
 ├── media/
-│   └── profile_images/              # ✅ Photos profil uploadées
+│   └── profile_images/              #  Photos profil uploadées
 │
-├── requirements.txt                 # ✅ Dépendances Python
-├── .env                             # ✅ Configuration
-├── PROJECT_REQUIREMENTS.md          # ✅ CE DOCUMENT
-└── README.md                        # ✅ Documentation principale
+├── requirements.txt                 #  Dépendances Python
+├── .env                             #  Configuration
+├── PROJECT_REQUIREMENTS.md          #  CE DOCUMENT
+└── README.md                        #  Documentation principale
 ```
 
 ---
@@ -696,30 +696,30 @@ smarthome/
 
 ### Points clés à vérifier
 
-1. **Technologies conformes** ✅
+1. **Technologies conformes** 
    - Backend: Tornado + PostgreSQL + SQLAlchemy
    - Frontend: HTML/CSS/JavaScript + Fetch API + WebSocket
 
-2. **Fonctionnalités complètes** ✅
+2. **Fonctionnalités complètes** 
    - Toutes les exigences du cahier des charges respectées
    - Fonctionnalités bonus implémentées
 
-3. **Base de données** ✅
+3. **Base de données** 
    - 9 tables conformes au schéma demandé
    - Relations foreign keys + cascade
    - Indexes de performance
 
-4. **API REST** ✅
+4. **API REST** 
    - 50+ endpoints documentés
    - Respect des conventions REST (GET/POST/PUT/DELETE)
    - Réponses JSON structurées
 
-5. **WebSocket** ✅
+5. **WebSocket** 
    - Temps réel fonctionnel
    - 6 types de messages
    - Broadcast par maison
 
-6. **API externe** ✅
+6. **API externe** 
    - Open-Meteo intégrée
    - Géocodage + données météo
    - Widget temps réel

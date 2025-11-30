@@ -3,7 +3,6 @@ REST API for house and room management.
 """
 
 import json
-import tornado.web
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from ..models import House, Room, EventHistory

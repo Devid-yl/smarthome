@@ -45,10 +45,10 @@ Ce guide fournit un plan structuré pour démontrer l'ensemble des fonctionnalit
 ```
 
 **Points à mentionner** :
-- ✅ **Hachage bcrypt** des mots de passe (sécurité)
-- ✅ **Cookies sécurisés** pour l'authentification
-- ✅ **JWT optionnel** pour REST API
-- ✅ **Validation côté serveur** (email format, mot de passe fort)
+-  **Hachage bcrypt** des mots de passe (sécurité)
+-  **Cookies sécurisés** pour l'authentification
+-  **JWT optionnel** pour REST API
+-  **Validation côté serveur** (email format, mot de passe fort)
 
 **Code à montrer** :
 ```python
@@ -70,9 +70,9 @@ hashed_pw = hash_password(password)  # bcrypt avec salt automatique
 ```
 
 **Points à mentionner** :
-- ✅ **Upload d'images** avec validation (JPG/PNG, 5MB max)
-- ✅ **Modification sécurisée** (mot de passe requis pour certains changements)
-- ✅ **Stockage organisé** dans `/media/profile_images/`
+-  **Upload d'images** avec validation (JPG/PNG, 5MB max)
+-  **Modification sécurisée** (mot de passe requis pour certains changements)
+-  **Stockage organisé** dans `/media/profile_images/`
 
 **Code à montrer** :
 ```python
@@ -102,10 +102,10 @@ hashed_pw = hash_password(password)  # bcrypt avec salt automatique
 ```
 
 **Points à mentionner** :
-- ✅ **Grille JSON dynamique** avec murs automatiques
-- ✅ **Format hybride** : ancien (array) + nouveau (layered)
-- ✅ **Cascade delete** (suppression maison → tout effacé)
-- ✅ **Permissions strictes** (propriétaire vs membres)
+-  **Grille JSON dynamique** avec murs automatiques
+-  **Format hybride** : ancien (array) + nouveau (layered)
+-  **Cascade delete** (suppression maison → tout effacé)
+-  **Permissions strictes** (propriétaire vs membres)
 
 **Structure de grille à expliquer** :
 ```json
@@ -134,10 +134,10 @@ hashed_pw = hash_password(password)  # bcrypt avec salt automatique
 ```
 
 **Points à mentionner** :
-- ✅ **Système d'invitations** (pending/accepted/rejected)
-- ✅ **2 rôles** : Administrateur, Occupant
-- ✅ **Permissions granulaires** par rôle
-- ✅ **Historique complet** des actions membres
+-  **Système d'invitations** (pending/accepted/rejected)
+-  **2 rôles** : Administrateur, Occupant
+-  **Permissions granulaires** par rôle
+-  **Historique complet** des actions membres
 
 **Table à montrer** :
 ```sql
@@ -182,11 +182,11 @@ status: pending | accepted | rejected
 ```
 
 **Points à mentionner** :
-- ✅ **4 types de capteurs** IoT différents
-- ✅ **Unités automatiques** (°C, lux, %, bool)
-- ✅ **Valeurs flottantes** pour précision
-- ✅ **Timestamp automatique** (last_update)
-- ✅ **État actif/inactif** configurable
+-  **4 types de capteurs** IoT différents
+-  **Unités automatiques** (°C, lux, %, bool)
+-  **Valeurs flottantes** pour précision
+-  **Timestamp automatique** (last_update)
+-  **État actif/inactif** configurable
 
 **Code à montrer** :
 ```python
@@ -234,11 +234,11 @@ unit: String (calculé automatiquement)
 ```
 
 **Points à mentionner** :
-- ✅ **4 types d'équipements** différents
-- ✅ **États binaires** adaptés au type
-- ✅ **Permissions par rôle** (allowed_roles: [])
-- ✅ **Broadcast WebSocket** automatique
-- ✅ **Historique complet** des actions
+-  **4 types d'équipements** différents
+-  **États binaires** adaptés au type
+-  **Permissions par rôle** (allowed_roles: [])
+-  **Broadcast WebSocket** automatique
+-  **Historique complet** des actions
 
 **Structure permissions** :
 ```json
@@ -280,11 +280,11 @@ unit: String (calculé automatiquement)
 ```
 
 **Points à mentionner** :
-- ✅ **6 opérateurs** : `>`, `<`, `>=`, `<=`, `==`, `!=`
-- ✅ **Évaluation automatique** (trigger endpoint)
-- ✅ **État actif/inactif** par règle
-- ✅ **Timestamp last_triggered**
-- ✅ **Historique détaillé** avec metadata
+-  **6 opérateurs** : `>`, `<`, `>=`, `<=`, `==`, `!=`
+-  **Évaluation automatique** (trigger endpoint)
+-  **État actif/inactif** par règle
+-  **Timestamp last_triggered**
+-  **Historique détaillé** avec metadata
 
 **Logique B2B à expliquer** :
 ```python
@@ -336,11 +336,11 @@ if condition_met:
 ```
 
 **Points à mentionner** :
-- ✅ **API Open-Meteo** (gratuite, sans clé)
-- ✅ **Géocodage automatique** (Nominatim)
-- ✅ **Parsing d'adresse** intelligent
-- ✅ **Gestion d'erreurs** complète
-- ✅ **Cache potentiel** (optimisation)
+-  **API Open-Meteo** (gratuite, sans clé)
+-  **Géocodage automatique** (Nominatim)
+-  **Parsing d'adresse** intelligent
+-  **Gestion d'erreurs** complète
+-  **Cache potentiel** (optimisation)
 
 **Code à montrer** :
 ```python
@@ -391,11 +391,11 @@ GET https://api.open-meteo.com/v1/forecast
 ```
 
 **Points à mentionner** :
-- ✅ **5 types d'événements** distincts
-- ✅ **Metadata JSON** pour détails
-- ✅ **IP address tracking**
-- ✅ **Cleanup automatique** (>1000 événements)
-- ✅ **Stratégie de rétention** intelligente
+-  **5 types d'événements** distincts
+-  **Metadata JSON** pour détails
+-  **IP address tracking**
+-  **Cleanup automatique** (>1000 événements)
+-  **Stratégie de rétention** intelligente
 
 **Système de cleanup à expliquer** :
 ```python
@@ -451,11 +451,11 @@ TARGET_AFTER_CLEANUP = 800
 ```
 
 **Points à mentionner** :
-- ✅ **WebSocket persistant** (connexion maintenue)
-- ✅ **Broadcast automatique** à tous les clients
-- ✅ **Messages typés** JSON
-- ✅ **Reconnexion automatique** si déconnexion
-- ✅ **Format structuré** pour chaque type
+-  **WebSocket persistant** (connexion maintenue)
+-  **Broadcast automatique** à tous les clients
+-  **Messages typés** JSON
+-  **Reconnexion automatique** si déconnexion
+-  **Format structuré** pour chaque type
 
 **Structure message WebSocket** :
 ```json
@@ -502,11 +502,11 @@ ws.onmessage = (event) => {
 ```
 
 **Points à mentionner** :
-- ✅ **Table user_positions** dédiée
-- ✅ **Coordonnées X/Y** dans la grille
-- ✅ **Timestamp last_update**
-- ✅ **WebSocket broadcast** automatique
-- ✅ **Affichage visuel** avec badges
+-  **Table user_positions** dédiée
+-  **Coordonnées X/Y** dans la grille
+-  **Timestamp last_update**
+-  **WebSocket broadcast** automatique
+-  **Affichage visuel** avec badges
 
 ---
 
@@ -552,11 +552,11 @@ users (1) ─── (N) houses (1) ─┬─ (N) rooms
 ```
 
 **Points à mentionner** :
-- ✅ **9 tables** normalisées
-- ✅ **Foreign keys** avec contraintes
-- ✅ **Cascade delete** pour intégrité
-- ✅ **Indexes** pour performance
-- ✅ **JSONB** pour flexibilité (grid, metadata)
+-  **9 tables** normalisées
+-  **Foreign keys** avec contraintes
+-  **Cascade delete** pour intégrité
+-  **Indexes** pour performance
+-  **JSONB** pour flexibilité (grid, metadata)
 
 **Requête à montrer** :
 ```sql
@@ -586,18 +586,18 @@ GROUP BY h.id, h.name;
 
 | Fonctionnalité | Points | Démontré |
 |---------------|--------|----------|
-| Authentification utilisateur | 3 | ✅ Inscription, login, JWT |
-| Gestion profil | 2 | ✅ Modification, upload photo |
-| CRUD maisons | 4 | ✅ Create, Read, Update, Delete |
-| Multi-utilisateurs | 3 | ✅ Invitations, rôles, permissions |
-| Capteurs IoT (4 types) | 4 | ✅ Temperature, luminosity, rain, presence |
-| Équipements (4 types) | 4 | ✅ Shutter, door, light, sound_system |
-| Automatisation | 5 | ✅ Règles, conditions, actions, trigger |
-| Historique événements | 3 | ✅ 5 types, filtres, stats, cleanup |
-| WebSocket temps réel | 3 | ✅ Broadcast, messages typés |
-| Simulation mouvement | 2 | ✅ Positions, tracking temps réel |
+| Authentification utilisateur | 3 |  Inscription, login, JWT |
+| Gestion profil | 2 |  Modification, upload photo |
+| CRUD maisons | 4 |  Create, Read, Update, Delete |
+| Multi-utilisateurs | 3 |  Invitations, rôles, permissions |
+| Capteurs IoT (4 types) | 4 |  Temperature, luminosity, rain, presence |
+| Équipements (4 types) | 4 |  Shutter, door, light, sound_system |
+| Automatisation | 5 |  Règles, conditions, actions, trigger |
+| Historique événements | 3 |  5 types, filtres, stats, cleanup |
+| WebSocket temps réel | 3 |  Broadcast, messages typés |
+| Simulation mouvement | 2 |  Positions, tracking temps réel |
 
-**Total** : **25/25** ✅
+**Total** : **25/25** 
 
 ---
 
@@ -605,11 +605,11 @@ GROUP BY h.id, h.name;
 
 | Fonctionnalité | Points | Démontré |
 |---------------|--------|----------|
-| Intégration Open-Meteo | 3 | ✅ Météo temps réel |
-| Géocodage automatique | 1 | ✅ Nominatim API |
-| Gestion erreurs | 1 | ✅ Validation adresse |
+| Intégration Open-Meteo | 3 |  Météo temps réel |
+| Géocodage automatique | 1 |  Nominatim API |
+| Gestion erreurs | 1 |  Validation adresse |
 
-**Total** : **5/5** ✅
+**Total** : **5/5** 
 
 ---
 
@@ -617,16 +617,16 @@ GROUP BY h.id, h.name;
 
 | Fonctionnalité | Points | Démontré |
 |---------------|--------|----------|
-| 9 tables normalisées | 2 | ✅ Structure complète |
-| Relations & contraintes | 1 | ✅ Foreign keys, cascade |
-| Requêtes complexes | 1 | ✅ Jointures, agrégations |
-| Performance (indexes) | 1 | ✅ Optimisations |
+| 9 tables normalisées | 2 |  Structure complète |
+| Relations & contraintes | 1 |  Foreign keys, cascade |
+| Requêtes complexes | 1 |  Jointures, agrégations |
+| Performance (indexes) | 1 |  Optimisations |
 
-**Total** : **5/5** ✅
+**Total** : **5/5** 
 
 ---
 
-## 🎓 **TOTAL GÉNÉRAL : 35/35 points** ✅
+## 🎓 **TOTAL GÉNÉRAL : 35/35 points** 
 
 ---
 
@@ -777,7 +777,7 @@ Préparer ces captures pour la présentation :
 
 ---
 
-## ✅ Checklist Finale
+##  Checklist Finale
 
 Avant la présentation, vérifier :
 

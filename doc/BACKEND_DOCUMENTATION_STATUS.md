@@ -8,7 +8,7 @@
 
 ## Current Status Assessment
 
-### ✅ Compliant Files
+###  Compliant Files
 - `API_DOCUMENTATION.md` - Complete English API reference
 - `PROJECT_REQUIREMENTS.md` - Academic requirements mapping (French for academic context)
 - Most code is well-structured
@@ -141,22 +141,22 @@ class HouseDetailHandler(BaseAPIHandler):
 ## Translation Priority
 
 ### High Priority (Core API Handlers)
-1. ✅ `users_api.py` - User management
-2. ✅ `houses_api.py` - House/Room management
-3. ✅ `sensors.py` - IoT sensors
-4. ✅ `equipments.py` - Equipment control
-5. ✅ `automation_rules.py` - Automation rules
-6. ✅ `event_history.py` - Event logging
+1.  `users_api.py` - User management
+2.  `houses_api.py` - House/Room management
+3.  `sensors.py` - IoT sensors
+4.  `equipments.py` - Equipment control
+5.  `automation_rules.py` - Automation rules
+6.  `event_history.py` - Event logging
 
 ### Medium Priority (Supporting Features)
-7. ✅ `house_members.py` - Member management
-8. ✅ `user_positions.py` - Position tracking
-9. ✅ `weather.py` - Weather service
-10. ✅ `automation.py` - Automation triggers
+7.  `house_members.py` - Member management
+8.  `user_positions.py` - Position tracking
+9.  `weather.py` - Weather service
+10.  `automation.py` - Automation triggers
 
 ### Low Priority (Editor & WebSocket)
-11. ✅ `grid_editor.py` - Grid editing
-12. ✅ `websocket.py` - Real-time updates
+11.  `grid_editor.py` - Grid editing
+12.  `websocket.py` - Real-time updates
 
 ---
 

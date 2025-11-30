@@ -34,7 +34,8 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
         self.user_id = user_id
         RealtimeHandler.clients.add(self)
         print(
-            f"[WebSocket] Client connecté (user_id={user_id}). Total clients: {len(RealtimeHandler.clients)}"
+            f"[WebSocket] Client connecté (user_id={user_id}). "
+            f"Total clients: {len(RealtimeHandler.clients)}"
         )
 
     def on_message(self, message):
@@ -50,7 +51,8 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
         """Connexion fermée"""
         RealtimeHandler.clients.discard(self)
         print(
-            f"[WebSocket] Client déconnecté. Total clients: {len(RealtimeHandler.clients)}"
+            f"[WebSocket] Client déconnecté. "
+            f"Total clients: {len(RealtimeHandler.clients)}"
         )
 
     @classmethod
@@ -69,7 +71,8 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
         )
 
         print(
-            f"[WebSocket] Broadcasting sensor update: sensor_id={sensor_id}, value={value}"
+            f"[WebSocket] Broadcasting sensor update: "
+            f"sensor_id={sensor_id}, value={value}"
         )
         dead_clients = set()
 
@@ -110,7 +113,8 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
         )
 
         print(
-            f"[WebSocket] Broadcasting equipment update: equipment_id={equipment_id}, state={state}"
+            f"[WebSocket] Broadcasting equipment update: "
+            f"equipment_id={equipment_id}, state={state}"
         )
         print(f"[WebSocket] Envoi à {len(cls.clients)} client(s)")
         dead_clients = set()
@@ -128,7 +132,8 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
                 dead_clients.add(client)
 
         print(
-            f"[WebSocket] Broadcast terminé: {sent_count}/{len(cls.clients)} messages envoyés"
+            f"[WebSocket] Broadcast terminé: "
+            f"{sent_count}/{len(cls.clients)} messages envoyés"
         )
 
         # Nettoyer les clients morts

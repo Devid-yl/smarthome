@@ -1,6 +1,5 @@
 """House Members API handlers."""
 
-import tornado.web
 import json
 from datetime import datetime
 from sqlalchemy import select, and_
@@ -8,36 +7,6 @@ from sqlalchemy.orm import selectinload
 from ..models import HouseMember, House, User, EventHistory
 from ..database import async_session_maker
 from .base import BaseAPIHandler
-
-
-class BaseAPIHandler(tornado.web.RequestHandler):
-    """Base handler for REST APIs."""
-
-    def check_xsrf_cookie(self):
-        """Disable XSRF for REST APIs."""
-        pass
-
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header(
-            "Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        )
-        self.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-    def options(self, *args):
-        self.set_status(204)
-        self.finish()
-
-    def get_current_user(self):
-        user_id = self.get_secure_cookie("uid")
-        if not user_id:
-            return None
-        username = self.get_secure_cookie("uname")
-        return {
-            "id": int(user_id.decode()),
-            "username": username.decode() if username else None,
-        }
 
 
 class HouseMembersHandler(BaseAPIHandler):

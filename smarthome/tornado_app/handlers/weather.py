@@ -4,7 +4,6 @@ API handler for weather service.
 
 import json
 import re
-import tornado.web
 from ..models import House
 from ..database import async_session_maker
 from ..services.weather_service import WeatherService

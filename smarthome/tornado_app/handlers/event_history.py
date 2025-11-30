@@ -1,6 +1,5 @@
 """Event History API handlers."""
 
-import tornado.web
 from datetime import datetime, timedelta
 from sqlalchemy import select, and_, desc
 from sqlalchemy.orm import selectinload

@@ -9,7 +9,6 @@ from ..models import User
 from ..database import async_session_maker
 from ..auth import hash_password, verify_password
 from datetime import datetime
-import os
 
 
 class BaseAPIHandler(tornado.web.RequestHandler):

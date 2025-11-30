@@ -1,5 +1,4 @@
 import json
-import tornado.web
 from sqlalchemy import select
 from ..models import Equipment, EventHistory
 from ..database import async_session_maker

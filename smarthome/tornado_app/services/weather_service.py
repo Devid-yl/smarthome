@@ -34,7 +34,7 @@ class WeatherService:
                 }
 
                 async with session.get(
-                    WeatherService.GEOCODING_URL, params=params
+                    WeatherService.GEOCODING_URL, params=params  # type: ignore
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
@@ -90,7 +90,7 @@ class WeatherService:
                 }
 
                 async with session.get(
-                    WeatherService.BASE_URL, params=params
+                    WeatherService.BASE_URL, params=params  # type: ignore
                 ) as response:
                     if response.status == 200:
                         data = await response.json()

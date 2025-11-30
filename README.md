@@ -23,38 +23,38 @@ Gérez vos maisons, pièces, capteurs et équipements intelligents depuis une in
 ## 🎯 Fonctionnalités principales
 
 ### 🏠 Gestion des maisons
-- ✅ Création, modification, suppression de maisons
-- ✅ Gestion des dimensions et de l'agencement
-- ✅ Éditeur graphique de grille d'intérieur
-- ✅ Vue détaillée par maison avec onglets
+-  Création, modification, suppression de maisons
+-  Gestion des dimensions et de l'agencement
+-  Éditeur graphique de grille d'intérieur
+-  Vue détaillée par maison avec onglets
 
 ### 🚪 Gestion des pièces
-- ✅ Ajout de pièces multiples par maison
-- ✅ Association automatique aux capteurs et équipements
-- ✅ Suppression avec cascade (capteurs/équipements)
+-  Ajout de pièces multiples par maison
+-  Association automatique aux capteurs et équipements
+-  Suppression avec cascade (capteurs/équipements)
 
 ### 📊 Capteurs IoT
 - **Types supportés** : Température (°C), Luminosité (lux), Pluie (%), Présence
-- ✅ Création et configuration personnalisée
-- ✅ Mise à jour des valeurs en temps réel
-- ✅ Activation/désactivation individuelle
-- ✅ Filtrage par pièce ou type
+-  Création et configuration personnalisée
+-  Mise à jour des valeurs en temps réel
+-  Activation/désactivation individuelle
+-  Filtrage par pièce ou type
 
 ### ⚙️ Équipements connectés
 - **Types** : Volets roulants, Portes, Lumières, Système audio
-- ✅ Contrôle d'état (on/off, ouvert/fermé)
-- ✅ Association à des pièces spécifiques
-- ✅ Gestion centralisée par type
-- ✅ API dédiée par équipement
+-  Contrôle d'état (on/off, ouvert/fermé)
+-  Association à des pièces spécifiques
+-  Gestion centralisée par type
+-  API dédiée par équipement
 
 ### 🤖 Automatisation intelligente
 **Système de règles conditionnelles** :
-- ✅ Création de règles personnalisées (capteur → condition → équipement)
-- ✅ Support de 6 opérateurs (>, <, >=, <=, ==, !=)
-- ✅ Activation/désactivation individuelle des règles
-- ✅ Déclenchement manuel ou automatique via API
-- ✅ Historique détaillé des actions exécutées
-- ✅ Logging complet (raison, équipement, action, timestamps)
+-  Création de règles personnalisées (capteur → condition → équipement)
+-  Support de 6 opérateurs (>, <, >=, <=, ==, !=)
+-  Activation/désactivation individuelle des règles
+-  Déclenchement manuel ou automatique via API
+-  Historique détaillé des actions exécutées
+-  Logging complet (raison, équipement, action, timestamps)
 
 **Exemples de règles** :
 - 🌡️ Température > 28°C → Fermer volets
@@ -63,12 +63,12 @@ Gérez vos maisons, pièces, capteurs et équipements intelligents depuis une in
 - 👤 Présence == 1 → Allumer lumières
 
 ### 👤 Gestion des utilisateurs
-- ✅ Inscription avec email et téléphone
-- ✅ Authentification sécurisée (cookies HTTPOnly)
-- ✅ Profil utilisateur avec photo de profil
-- ✅ Modification des informations (username, email, password)
-- ✅ Suppression de compte avec confirmation
-- ✅ Upload d'images (max 5 Mo)
+-  Inscription avec email et téléphone
+-  Authentification sécurisée (cookies HTTPOnly)
+-  Profil utilisateur avec photo de profil
+-  Modification des informations (username, email, password)
+-  Suppression de compte avec confirmation
+-  Upload d'images (max 5 Mo)
 
 ---
 
@@ -367,11 +367,11 @@ python test_api.py
 ```
 
 **Ce script teste** :
-- ✅ Inscription et connexion
-- ✅ CRUD maisons et pièces
-- ✅ CRUD capteurs et équipements
-- ✅ Automatisation B2B
-- ✅ Gestion du profil
+-  Inscription et connexion
+-  CRUD maisons et pièces
+-  CRUD capteurs et équipements
+-  Automatisation B2B
+-  Gestion du profil
 
 ### Tests de l'interface
 
@@ -398,19 +398,19 @@ Ouvrir http://localhost:8089
 
 ---
 
-## ✅ Fonctionnalités implémentées
+##  Fonctionnalités implémentées
 
-### Phase 1 : Fonctionnalités de base ✅
-- ✅ **API Utilisateurs** : Inscription, connexion, profil
-- ✅ **API Maisons** : CRUD complet, pièces, visualisation grille
-- ✅ **API Capteurs** : Création, lecture, mise à jour
-- ✅ **API Équipements** : CRUD, contrôle état
-- ✅ **API Automatisation** : Règles conditionnelles, déclenchement
-- ✅ **API Membres** : Invitation, gestion rôles (admin/occupant/guest)
-- ✅ **API Historique** : Journalisation automatique des événements
-- ✅ **API Météo** : Intégration Open-Meteo
-- ✅ **WebSockets** : Notifications temps réel
-- ✅ **Géolocalisation** : Tracking positions utilisateurs
+### Phase 1 : Fonctionnalités de base 
+-  **API Utilisateurs** : Inscription, connexion, profil
+-  **API Maisons** : CRUD complet, pièces, visualisation grille
+-  **API Capteurs** : Création, lecture, mise à jour
+-  **API Équipements** : CRUD, contrôle état
+-  **API Automatisation** : Règles conditionnelles, déclenchement
+-  **API Membres** : Invitation, gestion rôles (admin/occupant/guest)
+-  **API Historique** : Journalisation automatique des événements
+-  **API Météo** : Intégration Open-Meteo
+-  **WebSockets** : Notifications temps réel
+-  **Géolocalisation** : Tracking positions utilisateurs
 - ⚠️ **PWA** : Mode offline
 
 ### Phase 3 : Tests et production
@@ -501,5 +501,5 @@ Ce projet est sous licence **MIT**. Consultez [LICENSE](LICENSE) pour plus d'inf
 
 **Version** : 2.0 (Architecture REST complète)  
 **Dernière mise à jour** : Novembre 2024  
-**Statut** : ✅ Production Ready
+**Statut** :  Production Ready
 
