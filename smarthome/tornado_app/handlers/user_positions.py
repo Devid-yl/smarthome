@@ -72,6 +72,7 @@ class UserPositionHandler(BaseAPIHandler):
                 {
                     "user_id": position.user_id,
                     "username": user.username,
+                    "profile_image": user.profile_image,
                     "x": position.x,
                     "y": position.y,
                     "last_update": position.last_update.isoformat()
@@ -172,6 +173,7 @@ class UserPositionHandler(BaseAPIHandler):
                 "house_id": house_id,
                 "user_id": user_id,
                 "username": user.username,
+                "profile_image": user.profile_image,
                 "x": x,
                 "y": y,
                 "timestamp": datetime.utcnow().isoformat()
@@ -188,7 +190,8 @@ class UserPositionHandler(BaseAPIHandler):
                     "x": x,
                     "y": y,
                     "user_id": user_id,
-                    "username": user.username
+                    "username": user.username,
+                    "profile_image": user.profile_image
                 }
             })
 

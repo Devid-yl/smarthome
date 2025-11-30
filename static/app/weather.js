@@ -8,12 +8,50 @@ let isManualMode = false;
 let manualWeatherData = null;
 
 /**
- * Initialiser la météo pour une maison
+ * Charger les données météo depuis le cache localStorage
+ */
+function loadWeatherFromCache(houseId) {
+    try {
+        const cacheKey = `weather_${houseId}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            const data = JSON.parse(cached);
+            // Vérifier que le cache n'est pas trop vieux (max 1 heure)
+            const now = Date.now();
+            if (data.timestamp && (now - data.timestamp < 60 * 60 * 1000)) {
+                weatherData = data;
+                displayWeather();
+                console.log('🌤️ [Weather] Données chargées depuis le cache');
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error('Erreur chargement cache météo:', error);
+    }
+    return false;
+}
+
+/**
+ * Sauvegarder les données météo dans le cache localStorage
+ */
+function saveWeatherToCache(houseId, data) {
+    try {
+        const cacheKey = `weather_${houseId}`;
+        const cacheData = {
+            ...data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        console.log('💾 [Weather] Données sauvegardées en cache');
+    } catch (error) {
+        console.error('Erreur sauvegarde cache météo:', error);
+    }
+}
+
+/**
+ * Initialiser la météo pour une maison (démarrer l'interval de rafraîchissement)
  */
 async function initWeather(houseId) {
-    // Charger immédiatement
-    await loadWeather(houseId);
-    
     // Actualiser toutes les 10 minutes
     if (weatherUpdateInterval) {
         clearInterval(weatherUpdateInterval);
@@ -31,6 +69,8 @@ async function loadWeather(houseId) {
         const response = await fetch(`/api/weather/${houseId}`);
         if (response.ok) {
             weatherData = await response.json();
+            // Sauvegarder dans le cache
+            saveWeatherToCache(houseId, weatherData);
             displayWeather();
             // Synchroniser automatiquement avec les capteurs
             syncWeatherToSensorsAuto();
@@ -57,13 +97,12 @@ function displayWeather() {
     // Utiliser les données manuelles si le mode manuel est activé
     const currentData = isManualMode && manualWeatherData ? manualWeatherData : weatherData;
     
-    const cardClass = isManualMode ? 'weather-card weather-manual-mode' : 'weather-card';
     const modeIndicator = isManualMode ? 
-        '<div class="weather-manual-indicator">📝 Mode Manuel</div>' : '';
+        '<div class="weather-manual-indicator">Mode Manuel</div>' : '';
     
     container.style.display = 'block';
     container.innerHTML = `
-        <div class="${cardClass}">
+        <div class="weather-card ${isManualMode ? 'weather-manual-mode' : ''}">
             ${modeIndicator}
             <div class="weather-header">
                 <span class="weather-emoji">${currentData.emoji || '🌍'}</span>
@@ -96,15 +135,15 @@ function displayWeather() {
             </div>
             <div class="weather-controls">
                 ${isManualMode ? `
-                    <button class="btn btn-sm" onclick="showManualWeatherForm()">
-                        ✏️ Modifier valeurs
+                    <button class="btn btn-primary" onclick="showManualWeatherForm()">
+                        Modifier valeurs
                     </button>
-                    <button class="btn btn-sm" onclick="switchToRealWeather()">
-                        🌍 Repasser au réel
+                    <button class="btn btn-secondary" onclick="switchToRealWeather()">
+                        Repasser au réel
                     </button>
                 ` : `
-                    <button class="btn btn-sm" onclick="switchToManualMode()">
-                        📝 Mode manuel
+                    <button class="btn btn-primary" onclick="switchToManualMode()">
+                        Mode manuel
                     </button>
                 `}
             </div>
@@ -237,10 +276,10 @@ async function syncWeatherToSensorsAuto() {
                     body: JSON.stringify({ value: newValue })
                 });
                 if (response.ok) {
-                    console.log(`✅ [Weather] Capteur ${sensor.type} #${sensor.id} mis à jour`);
+                    console.log(`[Weather] Capteur ${sensor.type} #${sensor.id} mis à jour`);
                 }
             } catch (error) {
-                console.error(`❌ [Weather] Erreur mise à jour capteur ${sensor.id}:`, error);
+                console.error(`[Weather] Erreur mise à jour capteur ${sensor.id}:`, error);
             }
         }
     }

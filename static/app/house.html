@@ -4,49 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maison - SmartHome</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/main.css">
     <link rel="stylesheet" href="/static/css/house.css">
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --radius: 8px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
         .navbar {
-            background: #007bff;
-            color: white;
-            padding: 15px 30px;
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 64px;
+        }
+
+        .navbar h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
         }
         
-        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        .container { 
+            max-width: 1400px; 
+            margin: 2rem auto; 
+            padding: 0 1.5rem; 
+        }
         
         .header { 
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header h2 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
         }
         
         .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            background: white;
-            padding: 10px;
-            border-radius: 10px;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: var(--surface-color);
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
         }
         
         .tab {
-            padding: 10px 20px;
+            padding: 0.5rem 1.25rem;
             cursor: pointer;
             border: none;
-            background: #f5f5f5;
-            border-radius: 5px;
+            background: transparent;
+            border-radius: var(--radius);
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .tab:hover {
+            background: #f9fafb;
         }
         
         .tab.active {
-            background: #007bff;
+            background: var(--primary-color);
             color: white;
         }
         
@@ -55,32 +117,90 @@
         
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
         }
         
         .card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: var(--surface-color);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            transition: box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
-        .card h4 { margin-bottom: 10px; color: #333; }
-        .card p { color: #666; margin-bottom: 5px; font-size: 14px; }
+        .card h4 { 
+            margin: 0 0 0.75rem 0; 
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .card p { 
+            color: var(--text-muted); 
+            margin: 0.25rem 0; 
+            font-size: 0.875rem; 
+        }
         
         .btn { 
-            padding: 8px 16px;
+            padding: 0.5rem 1rem;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--radius);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
         }
         
-        .btn-primary { background: #007bff; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-warning { background: #ffc107; color: #333; }
+        .btn-primary { 
+            background: var(--primary-color); 
+            color: white; 
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-success { 
+            background: var(--success-color); 
+            color: white; 
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger { 
+            background: var(--danger-color); 
+            color: white; 
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning { 
+            background: var(--warning-color); 
+            color: white; 
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        
+        .btn-secondary { 
+            background: white; 
+            color: var(--text-main); 
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
         
         .modal {
             display: none;
@@ -94,47 +214,464 @@
         }
         
         .modal-content {
-            background: white;
+            background: var(--surface-color);
             max-width: 500px;
             margin: 100px auto;
-            padding: 30px;
-            border-radius: 10px;
+            padding: 1.5rem;
+            border-radius: 8px;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: var(--shadow-md);
         }
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            font-weight: 500;
+            color: var(--text-primary);
+        }
         .form-group input, .form-group select {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
         }
         
-        .actions { display: flex; gap: 5px; margin-top: 10px; }
+        .actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+        
+        .card .btn {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8125rem;
+        }
+        
+        /* Equipment card styles */
+        .equipment-card {
+            position: relative;
+        }
+        
+        .equipment-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+            transition: all 0.2s ease;
+        }
+        
+        /* Menu trois points */
+        .equipment-menu-container {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+        
+        .equipment-menu-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .equipment-menu-btn:hover {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+        
+        .equipment-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .equipment-menu.show {
+            display: flex;
+        }
+        
+        .equipment-menu button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .equipment-menu button:hover {
+            background: var(--bg-color);
+        }
+        
+        /* Sensor Menu */
+        .sensor-menu-container {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+        
+        .sensor-menu-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .sensor-menu-btn:hover {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+        
+        .sensor-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .sensor-menu.show {
+            display: flex;
+        }
+        
+        .sensor-menu button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .sensor-menu button:hover {
+            background: var(--bg-color);
+        }
+        
+        /* Rule Menu */
+        .rule-menu-container {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+        
+        .rule-menu-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .rule-menu-btn:hover {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+        
+        .rule-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .rule-menu.show {
+            display: flex;
+        }
+        
+        .rule-menu button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .rule-menu button:hover {
+            background: var(--bg-color);
+        }
+        
+        /* Header Menu */
+        .header-menu-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.75rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        
+        .header-menu-btn:hover {
+            background: var(--bg-color);
+            color: var(--text-main);
+        }
+        
+        .header-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .header-menu.show {
+            display: flex;
+        }
+        
+        .header-menu button {
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .header-menu button:hover {
+            background: var(--bg-color);
+        }
+        
+        /* Weather Widget */
+        #weather-widget {
+            background: #ffffff !important;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            height: 100%;
+        }
+        
+        .weather-card {
+            background: #ffffff !important;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .weather-manual-mode {
+            background: #ffffff !important;
+        }
+        
+        .weather-manual-indicator {
+            display: none;
+        }
+        
+        .weather-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .weather-emoji {
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+        
+        .weather-location strong {
+            display: block;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827 !important;
+            margin-bottom: 0.25rem;
+        }
+        
+        .weather-location small {
+            color: #6b7280 !important;
+            font-size: 0.875rem;
+        }
+        
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .weather-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 1rem;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        
+        .weather-icon {
+            font-size: 1.75rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .weather-label {
+            display: block;
+            font-size: 0.6875rem;
+            color: #4b5563;
+            font-weight: 600;
+            margin-bottom: 0.375rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .weather-value {
+            display: block;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        
+        .weather-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .weather-controls .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            width: 100%;
+            font-weight: 500;
+            background-color: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+        }
+        
+        .weather-controls .btn:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+        
+        .weather-controls .btn-primary {
+            background-color: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        
+        .weather-controls .btn-primary:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+        
+        .weather-controls .btn-secondary {
+            background-color: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        
+        .weather-controls .btn-secondary:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+        
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
         
         .status-badge {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
         
-        .status-active { background: #d4edda; color: #155724; }
-        .status-inactive { background: #f8d7da; color: #721c24; }
+        .status-active { 
+            background: #d1fae5; 
+            color: #065f46; 
+        }
+        .status-inactive { 
+            background: #fee2e2; 
+            color: #991b1b; 
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>🏠 <span id="house-name">Maison</span></h1>
+        <h1><span id="house-name">Maison</span></h1>
         <div style="display: flex; align-items: center; gap: 15px;">
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div id="ws-status-indicator" style="width: 10px; height: 10px; border-radius: 50%; background: #f44336;" title="État de connexion"></div>
-                <span style="font-size: 12px;">Temps réel</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div id="ws-status-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;" title="État de connexion"></div>
+                <span style="font-size: 0.8125rem; color: var(--text-muted);">Temps réel</span>
             </div>
-            <button class="btn btn-danger" onclick="goBack()">← Retour</button>
+            <button class="btn btn-secondary" onclick="goBack()">Retour</button>
         </div>
     </nav>
 
@@ -144,15 +681,17 @@
                 <h2 id="house-title">Chargement...</h2>
                 <p id="house-info"></p>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button id="members-btn" class="btn" style="background: #6f42c1; color: white;" onclick="goToMembers()">
-                    👥 Membres
+            <div style="position: relative;">
+                <button class="header-menu-btn" onclick="toggleHeaderMenu(event)" title="Options">
+                    ⋮
                 </button>
-                <button id="history-btn" class="btn" style="background: #17a2b8; color: white;" onclick="goToHistory()">
-                    📊 Historique
-                </button>
-                <button id="edit-house-btn" class="btn btn-warning">✏️ Modifier</button>
-                <button id="delete-house-btn" class="btn btn-danger">🗑️ Supprimer</button>
+                <div class="header-menu" id="header-menu">
+                    <button onclick="goToMembers()">Membres</button>
+                    <button onclick="goToHistory()">Historique</button>
+                    <button onclick="showEditHouseModal()">Modifier infos</button>
+                    <button onclick="showEditInteriorModal()">Modifier intérieur</button>
+                    <button onclick="deleteHouse()" style="color: #ef4444;">Supprimer</button>
+                </div>
             </div>
         </div>
 
@@ -160,37 +699,37 @@
         <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3>Plan de la maison</h3>
-                <button id="edit-interior-btn" class="btn" style="background: #6c757d; color: white;">
-                    🏠 Éditer intérieur
-                </button>
-            </div>
-            
-            <!-- Légende et filtres -->
-            <div style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-                        <strong>Afficher:</strong>
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="checkbox" id="show-sensors" checked onchange="displayHouseGrid()">
-                            <span>🌡️ Capteurs</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="checkbox" id="show-equipments" checked onchange="displayHouseGrid()">
-                            <span>⚙️ Équipements</span>
-                        </label>
-                    </div>
-                    <button id="simulate-movement-btn" class="btn" style="background: #17a2b8; color: white;" onclick="toggleMovementMode()">
-                        🚶 Simuler déplacement
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="simulate-btn" class="btn btn-sm" onclick="toggleMovementMode()" style="background: #2563eb; color: white; border: none; font-size: 0.8125rem; font-weight: 500;" title="Activer la simulation de déplacement">
+                        Simuler déplacement
+                    </button>
+                    <button id="stop-simulate-btn" class="btn btn-sm" onclick="stopSimulation()" style="display: none; background: #ef4444; color: white; border: none; font-size: 0.8125rem; font-weight: 500;" title="Arrêter la simulation">
+                        Arrêter simulation
                     </button>
                 </div>
             </div>
             
+            <!-- Légende et filtres -->
+            <div style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                    <strong>Afficher:</strong>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="checkbox" id="show-sensors" onchange="displayHouseGrid()">
+                        <span>Capteurs</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <input type="checkbox" id="show-equipments" checked onchange="displayHouseGrid()">
+                        <span>Équipements</span>
+                    </label>
+                </div>
+            </div>
+            
             <!-- Conteneur flex pour plan + météo -->
-            <div style="display: flex; gap: 20px; align-items: flex-start;">
-                <div id="house-grid" style="flex: 1; border: 2px solid #ddd; background: #f9f9f9; position: relative;"></div>
+            <div style="display: flex; gap: 20px; align-items: stretch;">
+                <div id="house-grid" style="flex: 1; border: 2px solid #ddd; background: #f9f9f9; position: relative; min-height: 400px;"></div>
                 
                 <!-- Weather Widget -->
-                <div id="weather-widget" style="flex-shrink: 0;"></div>
+                <div id="weather-widget" style="width: 320px; flex-shrink: 0; display: flex; flex-direction: column;"></div>
             </div>
         </div>
 
@@ -202,35 +741,32 @@
 
         <!-- Tab Équipements -->
         <div id="tab-equipments" class="tab-content active">
-            <button id="add-equipment-btn" class="btn btn-success" onclick="showAddEquipmentModal()" style="margin-bottom: 20px;">
-                ➕ Ajouter un équipement
+            <button id="add-equipment-btn" class="btn btn-success" onclick="showAddEquipmentModal()" style="margin-bottom: 1.25rem;">
+                Ajouter un équipement
             </button>
             <div id="equipments-grid" class="grid"></div>
         </div>
 
         <!-- Tab Capteurs -->
         <div id="tab-sensors" class="tab-content">
-            <button id="add-sensor-btn" class="btn btn-success" onclick="showAddSensorModal()" style="margin-bottom: 20px;">
-                ➕ Ajouter un capteur
+            <button id="add-sensor-btn" class="btn btn-success" onclick="showAddSensorModal()" style="margin-bottom: 1.25rem;">
+                Ajouter un capteur
             </button>
             <div id="sensors-grid" class="grid"></div>
         </div>
 
         <!-- Tab Automatisation -->
         <div id="tab-automation" class="tab-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3>Règles d'automatisation</h3>
-                <button id="add-rule-btn" class="btn btn-success" onclick="showAddRuleModal()">
-                    ➕ Créer une règle
-                </button>
-            </div>
+            <button id="add-rule-btn" class="btn btn-success" onclick="showAddRuleModal()" style="margin-bottom: 1.25rem;">
+                Créer une règle
+            </button>
             
             <div id="automation-rules-grid" class="grid"></div>
             
             <div id="trigger-automation-card" class="card" style="margin-top: 30px;">
                 <h3>Déclencher l'automatisation</h3>
                 <p>Applique toutes les règles actives basées sur les capteurs</p>
-                <button class="btn btn-primary" onclick="triggerAutomation()">🤖 Déclencher</button>
+                <button class="btn btn-primary" onclick="triggerAutomation()">Déclencher</button>
             </div>
             <div id="automation-log" style="margin-top: 20px;"></div>
         </div>
@@ -295,14 +831,14 @@
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox" class="equipment-role-checkbox" value="admin" style="width: auto; cursor: pointer;">
-                            <span>⚙️ Administrateur</span>
+                            <span>Administrateur</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox" class="equipment-role-checkbox" value="occupant" style="width: auto; cursor: pointer;">
-                            <span>👤 Occupant</span>
+                            <span>Occupant</span>
                         </label>
                     </div>
-                    <small style="color: #999; display: block; margin-top: 8px;">Le propriétaire a toujours accès. Si aucun rôle n'est sélectionné, tous pourront contrôler</small>
+                    <small style="color: var(--text-muted); display: block; margin-top: 8px;">Le propriétaire a toujours accès. Si aucun rôle n'est sélectionné, tous pourront contrôler</small>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn btn-primary">Enregistrer</button>
@@ -358,7 +894,7 @@
                 </div>
                 
                 <hr style="margin: 20px 0; border: 1px solid #ddd;">
-                <h4 style="margin-bottom: 15px;">📊 Condition (SI)</h4>
+                <h4 style="margin-bottom: 0.75rem;">Condition (SI)</h4>
                 
                 <div class="form-group">
                     <label>Capteur *</label>
@@ -383,14 +919,14 @@
                 </div>
                 
                 <hr style="margin: 20px 0; border: 1px solid #ddd;">
-                <h4 style="margin-bottom: 15px;">⚙️ Actions (ALORS)</h4>
+                <h4 style="margin-bottom: 0.75rem;">Actions (ALORS)</h4>
                 
                 <div id="rule-actions-container">
                     <!-- Actions dynamiques -->
                 </div>
                 
                 <button type="button" class="btn btn-success" onclick="addRuleAction()" style="margin-top: 10px;">
-                    ➕ Ajouter un équipement
+                    Ajouter un équipement
                 </button>
                 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -404,7 +940,7 @@
     <!-- Modal Éditer Permissions -->
     <div id="edit-roles-modal" class="modal">
         <div class="modal-content">
-            <h3>🔒 Gérer les permissions</h3>
+            <h3>Gérer les permissions</h3>
             <p id="edit-roles-equipment-name" style="color: #666; margin-bottom: 20px;"></p>
             <form id="edit-roles-form">
                 <div class="form-group">
@@ -412,14 +948,61 @@
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox" class="edit-role-checkbox" value="admin" style="width: auto; cursor: pointer;">
-                            <span>⚙️ Administrateur</span>
+                            <span>Administrateur</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                             <input type="checkbox" class="edit-role-checkbox" value="occupant" style="width: auto; cursor: pointer;">
-                            <span>👤 Occupant</span>
+                            <span>Occupant</span>
                         </label>
                     </div>
-                    <small style="color: #999; display: block; margin-top: 8px;">Le propriétaire a toujours accès. Si aucun rôle n'est sélectionné, tous pourront contrôler cet équipement</small>
+                    <small style="color: var(--text-muted); display: block; margin-top: 8px;">Le propriétaire a toujours accès. Si aucun rôle n'est sélectionné, tous pourront contrôler cet équipement</small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn" onclick="closeModals()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de modification d'équipement -->
+    <div id="edit-equipment-modal" class="modal">
+        <div class="modal-content">
+            <h3>Modifier l'équipement</h3>
+            <div id="edit-equipment-warning" style="display: none;"></div>
+            <form id="edit-equipment-form" onsubmit="submitEditEquipment(event)">
+                <div class="form-group">
+                    <label for="edit-equipment-name">Nom de l'équipement</label>
+                    <input type="text" id="edit-equipment-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-equipment-type">Type</label>
+                    <select id="edit-equipment-type" required>
+                        <option value="light">💡 Lumière</option>
+                        <option value="shutter">🪟 Volet roulant</option>
+                        <option value="door">🚪 Porte</option>
+                        <option value="sound_system">🔊 Système sonore</option>
+                    </select>
+                    <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">
+                        ⚠️ Attention : modifier le type change les états possibles (on/off vs open/closed)
+                    </small>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn" onclick="closeModals()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de modification de capteur -->
+    <div id="edit-sensor-modal" class="modal">
+        <div class="modal-content">
+            <h3>Modifier le capteur</h3>
+            <form onsubmit="event.preventDefault(); submitEditSensor();">
+                <div class="form-group">
+                    <label for="edit-sensor-name">Nom du capteur</label>
+                    <input type="text" id="edit-sensor-name" required>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button type="submit" class="btn btn-primary">Enregistrer</button>

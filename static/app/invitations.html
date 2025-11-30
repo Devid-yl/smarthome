@@ -4,59 +4,114 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mes Invitations - SmartHome</title>
-    <link rel="stylesheet" href="/static/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --radius: 8px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
         .navbar {
-            background: #007bff;
-            color: white;
-            padding: 15px 30px;
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 64px;
+        }
+
+        .navbar h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
         }
         
-        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .container { 
+            max-width: 900px; 
+            margin: 2rem auto; 
+            padding: 0 1.5rem; 
+        }
         
         .header { 
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
         }
         
         .invitation-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: box-shadow 0.2s;
+        }
+
+        .invitation-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         
         .invitation-info h3 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
+            margin: 0 0 0.5rem 0;
+            font-size: 1.125rem;
+            font-weight: 600;
         }
         
         .invitation-info p {
-            margin: 5px 0;
-            color: #666;
-            font-size: 14px;
+            margin: 0.25rem 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
         }
         
         .badge {
             display: inline-block;
-            padding: 5px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
         
-        .badge-admin { background: #ffc107; color: #333; }
-        .badge-occupant { background: #17a2b8; color: white; }
+        .badge-admin { background: #dbeafe; color: #1e40af; }
+        .badge-occupant { background: #f3f4f6; color: #374151; }
         
         .invitation-actions {
             display: flex;
@@ -64,28 +119,60 @@
         }
         
         .btn { 
-            padding: 10px 20px;
+            padding: 0.5rem 1rem;
             border: none;
-            border-radius: 5px;
+            border-radius: var(--radius);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
         }
         
-        .btn-success { background: #28a745; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
+        .btn-success { 
+            background: var(--success-color); 
+            color: white; 
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger { 
+            background: var(--danger-color); 
+            color: white; 
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary { 
+            background: white; 
+            color: var(--text-main); 
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+        }
         
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #999;
+            padding: 4rem 1.5rem;
+            color: var(--text-muted);
+        }
+
+        .invitation-actions {
+            display: flex;
+            gap: 0.5rem;
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>✉️ Mes Invitations</h1>
-        <button class="btn btn-secondary" onclick="goBack()">← Retour</button>
+        <h1>Mes Invitations</h1>
+        <button class="btn btn-secondary" onclick="goBack()">Retour</button>
     </nav>
 
     <div class="container">

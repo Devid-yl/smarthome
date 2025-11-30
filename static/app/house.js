@@ -55,13 +55,14 @@ async function init() {
     const editInteriorBtn = document.getElementById('edit-interior-btn');
     const editHouseForm = document.getElementById('edit-house-form');
     
-    if (editBtn && deleteBtn) {
-        console.log('Attaching event listeners to buttons');
-        editBtn.addEventListener('click', editHouse);
-        deleteBtn.addEventListener('click', deleteHouse);
-    } else {
-        console.error('Buttons not found:', { editBtn, deleteBtn });
-    }
+    // Les boutons n'existent plus dans le DOM, les fonctions sont appelées depuis le menu
+    // if (editBtn && deleteBtn) {
+    //     console.log('Attaching event listeners to buttons');
+    //     editBtn.addEventListener('click', editHouse);
+    //     deleteBtn.addEventListener('click', deleteHouse);
+    // } else {
+    //     console.error('Buttons not found:', { editBtn, deleteBtn });
+    // }
     
     if (editInteriorBtn) {
         editInteriorBtn.addEventListener('click', openGridEditor);
@@ -69,6 +70,11 @@ async function init() {
     
     if (editHouseForm) {
         editHouseForm.addEventListener('submit', submitEditHouse);
+    }
+    
+    // Afficher immédiatement le cache météo si disponible
+    if (typeof loadWeatherFromCache === 'function') {
+        loadWeatherFromCache(houseId);
     }
     
     await loadHouse();
@@ -85,7 +91,7 @@ async function init() {
         await loadWeather(houseId);
     }
     
-    // Initialiser le widget météo
+    // Initialiser le widget météo (interval de rafraîchissement)
     if (typeof initWeather === 'function') {
         initWeather(houseId);
     }
@@ -119,7 +125,12 @@ async function loadHouse() {
             document.getElementById('house-name').textContent = house.name;
             document.getElementById('house-title').textContent = house.name;
             document.getElementById('house-info').textContent = 
-                `${house.address || 'Pas d\'adresse'} | ${house.length} × ${house.width}`;
+                `${house.address || 'Pas d\'adresse'} | ${house.length * house.width} m²`;
+            
+            // Charger les pièces
+            if (house.rooms) {
+                rooms = house.rooms;
+            }
             
             // Masquer les éléments selon les permissions
             applyPermissions();
@@ -143,6 +154,7 @@ function applyPermissions() {
     const editInteriorBtn = document.getElementById('edit-interior-btn');
     const membersBtn = document.getElementById('members-btn');
     const historyBtn = document.getElementById('history-btn');
+    const headerMenu = document.querySelector('.header-menu-btn');
     
     if (!isAdmin) {
         if (editBtn) editBtn.style.display = 'none';
@@ -150,6 +162,7 @@ function applyPermissions() {
         if (editInteriorBtn) editInteriorBtn.style.display = 'none';
         if (membersBtn) membersBtn.style.display = 'none';
         if (historyBtn) historyBtn.style.display = 'none';
+        if (headerMenu) headerMenu.style.display = 'none';
         
         // Masquer les onglets Capteurs et Automatisation
         const sensorsTab = document.querySelector('.tab[onclick*="sensors"]');
@@ -200,9 +213,9 @@ function displayHouseGrid() {
     const grid = house.grid;
     const cellSize = 45; // Taille agrandie pour les icônes
     
-    // Vérifier les filtres
-    const showSensors = document.getElementById('show-sensors')?.checked !== false;
-    const showEquipments = document.getElementById('show-equipments')?.checked !== false;
+    // Vérifier les filtres (vérifier si la checkbox est explicitement cochée)
+    const showSensors = document.getElementById('show-sensors')?.checked === true;
+    const showEquipments = document.getElementById('show-equipments')?.checked === true;
     
     // Créer le tableau HTML
     let html = '<table style="border-collapse: collapse;">';
@@ -230,11 +243,16 @@ function displayHouseGrid() {
                 const roomId = baseValue - 2000;
                 const room = rooms.find(r => r.id === roomId);
                 if (room) {
-                    // Couleur aléatoire basée sur l'ID
-                    const hue = (roomId * 137.5) % 360;
-                    bgColor = `hsl(${hue}, 70%, 85%)`;
                     tooltipText = room.name;
-                    cellContent = `<div style="font-size: 9px; color: #666;">${room.name.substring(0, 3)}</div>`;
+                    
+                    // Afficher la couleur et le nom UNIQUEMENT si ni capteurs ni équipements ne sont affichés
+                    if (!showSensors && !showEquipments) {
+                        // Couleur aléatoire basée sur l'ID
+                        const hue = (roomId * 137.5) % 360;
+                        bgColor = `hsl(${hue}, 70%, 85%)`;
+                        // Afficher le nom abrégé (3 premières lettres)
+                        cellContent = `<div style="font-size: 10px; color: #555; font-weight: 600; text-align: center; line-height: 1.2;">${room.name.substring(0, 3)}</div>`;
+                    }
                 }
             } else {
                 // Cellule vide
@@ -336,23 +354,37 @@ function displayHouseGrid() {
             const usersHere = [];
             for (const [userId, pos] of userPositions.entries()) {
                 if (pos.x === j && pos.y === i) {
-                    usersHere.push(pos.username);
+                    usersHere.push(pos);
                 }
             }
             
             if (usersHere.length > 0) {
-                avatarHTML = `<div style="position: absolute; top: 2px; left: 2px; background: rgba(23, 162, 184, 0.9); color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: bold; z-index: 10;">
-                    👤 ${usersHere.join(', ')}
-                </div>`;
+                // Si un seul utilisateur avec photo de profil, afficher la photo
+                if (usersHere.length === 1 && usersHere[0].profile_image) {
+                    avatarHTML = `<div style="position: absolute; top: 2px; left: 2px; z-index: 10;" title="${usersHere[0].username}">
+                        <img src="${usersHere[0].profile_image}" alt="${usersHere[0].username}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(23, 162, 184, 0.9); box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    </div>`;
+                } else {
+                    // Sinon, afficher le badge avec les noms
+                    const usernames = usersHere.map(u => u.username).join(', ');
+                    avatarHTML = `<div style="position: absolute; top: 2px; left: 2px; background: rgba(23, 162, 184, 0.9); color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: bold; z-index: 10;">
+                        👤 ${usernames}
+                    </div>`;
+                }
             }
             
             // Composer le contenu final
             let finalContent = overlays.join('');
             finalContent += avatarHTML;
-            if (icons.length > 0) {
-                finalContent += `<div style="position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 2px; justify-content: center;">${icons.join('')}</div>`;
-            } else if (cellContent) {
+            
+            // Toujours afficher le nom de la pièce si disponible
+            if (cellContent) {
                 finalContent += `<div style="position: relative; z-index: 2;">${cellContent}</div>`;
+            }
+            
+            // Ajouter les icônes des capteurs/équipements par dessus
+            if (icons.length > 0) {
+                finalContent += `<div style="position: relative; z-index: 3; display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; margin-top: 2px;">${icons.join('')}</div>`;
             }
             
             const clickHandler = movementMode ? `onclick="handleCellClick(${j}, ${i})"` : '';
@@ -405,8 +437,10 @@ async function loadSensors() {
         const response = await fetch('/api/sensors');
         if (response.ok) {
             const data = await response.json();
-            // Filtrer par house_id
-            sensors = data.sensors.filter(s => s.house_id === parseInt(houseId));
+            // Filtrer par house_id et trier par ID pour maintenir un ordre stable
+            sensors = data.sensors
+                .filter(s => s.house_id === parseInt(houseId))
+                .sort((a, b) => a.id - b.id);
             // Mettre à jour la référence globale pour weather.js
             window.sensors = sensors;
             displaySensors();
@@ -422,38 +456,70 @@ function displaySensors() {
     const isAdmin = userRole === 'proprietaire' || userRole === 'admin';
     
     if (sensors.length === 0) {
-        grid.innerHTML = '<p>Aucun capteur. Ajoutez-en un !</p>';
+        grid.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">Aucun capteur. Ajoutez-en un !</p>';
         return;
     }
     
     grid.innerHTML = sensors.map(sensor => {
-        const typeEmoji = {
-            temperature: '🌡️',
-            luminosity: '💡',
-            rain: '🌧️',
-            presence: '👤'
+        const typeLabel = {
+            temperature: 'Température',
+            luminosity: 'Luminosité',
+            rain: 'Pluie',
+            presence: 'Présence'
         };
         
-        const actionsHtml = isAdmin ? `
-                <div class="actions">
-                    <button class="btn btn-primary" onclick="updateSensorValue(${sensor.id})">
-                        Mettre à jour
+        const menuHtml = isAdmin ? `
+                <div class="sensor-menu-container">
+                    <button class="sensor-menu-btn" onclick="toggleSensorMenu(event, ${sensor.id})" title="Options">
+                        ⋮
                     </button>
-                    <button class="btn btn-danger" onclick="deleteSensor(${sensor.id})">
-                        Supprimer
-                    </button>
+                    <div class="sensor-menu" id="sensor-menu-${sensor.id}">
+                        <button onclick="showEditSensorModal(${sensor.id})">Modifier</button>
+                        <button onclick="updateSensorValue(${sensor.id})">Mettre à jour</button>
+                        <button onclick="deleteSensor(${sensor.id})" style="color: #ef4444;">Supprimer</button>
+                    </div>
                 </div>` : '';
         
+        const typeIcon = {
+            temperature: '🌡️',
+            luminosity: '✨',
+            rain: '🌧️',
+            presence: '📡'
+        };
+        
+        const typeUnit = {
+            temperature: '°C',
+            luminosity: 'lux',
+            rain: 'mm',
+            presence: ''
+        };
+        
+        // Formatage spécial pour les capteurs de présence
+        let displayValue;
+        if (sensor.type === 'presence') {
+            displayValue = sensor.value == 1 || sensor.value === true ? 'Détectée' : 'Non détectée';
+        } else {
+            displayValue = `<span class="sensor-value">${sensor.value || 0}</span> <span style="font-size: 1rem; color: var(--text-muted);">${sensor.unit || typeUnit[sensor.type] || ''}</span>`;
+        }
+        
         return `
-            <div class="card" id="sensor-${sensor.id}">
-                <h4>${typeEmoji[sensor.type] || '📊'} ${sensor.name}</h4>
-                <p><strong>Valeur:</strong> <span class="sensor-value">${sensor.value || 0}</span> ${sensor.unit || ''}</p>
-                <p>
+            <div class="card" id="sensor-${sensor.id}" style="position: relative;">
+                <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.5rem; line-height: 1;">${typeIcon[sensor.type] || '📊'}</span>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 0.25rem 0;">${sensor.name}</h4>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">${typeLabel[sensor.type] || sensor.type}</span>
+                    </div>
+                </div>
+                ${menuHtml}
+                <p style="font-size: 1.5rem; font-weight: 600; margin: 0.5rem 0; color: var(--text-primary);">
+                    ${displayValue}
+                </p>
+                <p style="margin: 0.5rem 0;">
                     <span class="status-badge ${sensor.is_active ? 'status-active' : 'status-inactive'}">
                         ${sensor.is_active ? 'Actif' : 'Inactif'}
                     </span>
                 </p>
-                ${actionsHtml}
             </div>
         `;
     }).join('');
@@ -480,7 +546,7 @@ function displayEquipments() {
     const isAdmin = userRole === 'proprietaire' || userRole === 'admin';
     
     if (equipments.length === 0) {
-        grid.innerHTML = '<p>Aucun équipement. Ajoutez-en un !</p>';
+        grid.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">Aucun équipement. Ajoutez-en un !</p>';
         return;
     }
     
@@ -500,64 +566,80 @@ function displayEquipments() {
 
     grid.innerHTML = visibleEquipments.map(equipment => {
         const typeInfo = {
-            shutter: { emoji: '🪟', label: 'Volet roulant', states: { open: '⬆️ Ouvert', closed: '⬇️ Fermé' } },
-            door: { emoji: '🚪', label: 'Porte', states: { open: '🔓 Ouverte', closed: '🔒 Fermée' } },
-            light: { emoji: '💡', label: 'Lumière', states: { on: '🟡 Allumée', off: '⚫ Éteinte' } },
-            sound_system: { emoji: '🔊', label: 'Système sonore', states: { on: '🔊 Activé', off: '🔇 Désactivé' } }
+            shutter: { label: 'Volet roulant', states: { open: 'Ouvert', closed: 'Fermé' } },
+            door: { label: 'Porte', states: { open: 'Ouverte', closed: 'Fermée' } },
+            light: { label: 'Lumière', states: { on: 'Allumée', off: 'Éteinte' } },
+            sound_system: { label: 'Système sonore', states: { on: 'Activé', off: 'Désactivé' } }
         };
         
-        const info = typeInfo[equipment.type] || { emoji: '⚙️', label: 'Équipement', states: {} };
+        const info = typeInfo[equipment.type] || { label: 'Équipement', states: {} };
         const state = equipment.state || 'off';
         const stateDisplay = info.states[state] || state;
         
         // Déterminer la couleur de la carte selon l'état
         let stateColor = '';
-        let stateBg = '';
+        let stateBadge = '';
         if (equipment.type === 'light') {
-            stateColor = state === 'on' ? '#ffc107' : '#6c757d';
-            stateBg = state === 'on' ? '#fff9e6' : '#f8f9fa';
+            stateColor = state === 'on' ? 'var(--warning-color)' : 'var(--text-muted)';
+            stateBadge = state === 'on' ? 
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #fef3c7; color: #92400e; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Allumée</span>' :
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #f3f4f6; color: #6b7280; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Éteinte</span>';
         } else if (equipment.type === 'shutter') {
-            stateColor = state === 'open' ? '#28a745' : '#dc3545';
-            stateBg = state === 'open' ? '#e8f5e9' : '#ffe6e6';
+            stateColor = state === 'open' ? 'var(--success-color)' : 'var(--danger-color)';
+            stateBadge = state === 'open' ? 
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #d1fae5; color: #065f46; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Ouvert</span>' :
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #fee2e2; color: #991b1b; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Fermé</span>';
         } else if (equipment.type === 'door') {
-            stateColor = state === 'open' ? '#28a745' : '#dc3545';
-            stateBg = state === 'open' ? '#e8f5e9' : '#ffe6e6';
+            stateColor = state === 'open' ? 'var(--success-color)' : 'var(--danger-color)';
+            stateBadge = state === 'open' ? 
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #d1fae5; color: #065f46; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Ouverte</span>' :
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #fee2e2; color: #991b1b; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Fermée</span>';
         } else if (equipment.type === 'sound_system') {
-            stateColor = state === 'on' ? '#007bff' : '#6c757d';
-            stateBg = state === 'on' ? '#e3f2fd' : '#f8f9fa';
+            stateColor = state === 'on' ? 'var(--primary-color)' : 'var(--text-muted)';
+            stateBadge = state === 'on' ? 
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e3a8a; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Activé</span>' :
+                '<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #f3f4f6; color: #6b7280; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">Désactivé</span>';
         }
         
-        const actionsHtml = isAdmin ? `
-                <div class="actions">
-                    <button class="btn btn-warning" onclick="toggleEquipment(${equipment.id}, '${equipment.state}')">
-                        Changer état
+        const menuHtml = isAdmin ? `
+                <div class="equipment-menu-container">
+                    <button class="equipment-menu-btn" onclick="toggleEquipmentMenu(event, ${equipment.id})" title="Options">
+                        ⋮
                     </button>
-                    <button class="btn btn-primary" onclick="showEditRolesModal(${equipment.id})" style="background: #6c757d;">
-                        🔒 Permissions
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteEquipment(${equipment.id})">
-                        Supprimer
-                    </button>
-                </div>` : `
-                <div class="actions">
-                    <button class="btn btn-warning" onclick="toggleEquipment(${equipment.id}, '${equipment.state}')">
-                        Changer état
-                    </button>
-                </div>`;
+                    <div class="equipment-menu" id="equipment-menu-${equipment.id}">
+                        <button onclick="showEditRolesModal(${equipment.id}); closeEquipmentMenus();">Permissions</button>
+                        <button onclick="showEditEquipmentModal(${equipment.id}); closeEquipmentMenus();">Modifier</button>
+                        <button onclick="deleteEquipment(${equipment.id}); closeEquipmentMenus();" style="color: var(--danger-color);">Supprimer</button>
+                    </div>
+                </div>` : '';
+        
+        const typeIcon = {
+            shutter: '🪟',
+            door: '🚪',
+            light: '💡',
+            sound_system: '🔊'
+        };
         
         return `
-            <div class="card" style="background: ${stateBg}; border-left: 4px solid ${stateColor};">
-                <h4>${info.emoji} ${equipment.name}</h4>
-                <p style="font-size: 12px; color: #666; margin: 5px 0;">${info.label}</p>
-                <p style="font-size: 18px; font-weight: bold; color: ${stateColor}; margin: 10px 0;">
-                    ${stateDisplay}
-                </p>
-                <p>
+            <div class="card equipment-card" style="border-left: 3px solid ${stateColor}; cursor: pointer; position: relative;" 
+                 onclick="handleEquipmentCardClick(event, ${equipment.id}, '${equipment.state}')" 
+                 data-equipment-id="${equipment.id}">
+                ${menuHtml}
+                <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.5rem; line-height: 1;">${typeIcon[equipment.type] || '⚙️'}</span>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 0.25rem 0;">${equipment.name}</h4>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">${info.label}</span>
+                    </div>
+                </div>
+                <div style="margin: 0.5rem 0;">
+                    ${stateBadge}
+                </div>
+                <p style="margin: 0.5rem 0;">
                     <span class="status-badge ${equipment.is_active ? 'status-active' : 'status-inactive'}">
                         ${equipment.is_active ? 'Actif' : 'Inactif'}
                     </span>
                 </p>
-                ${actionsHtml}
             </div>
         `;
     }).join('');
@@ -813,6 +895,397 @@ async function deleteEquipment(equipmentId) {
 
 // Gérer les permissions d'un équipement
 let currentEditEquipmentId = null;
+let currentEditSensorId = null;
+
+// Gestion du clic sur la carte d'équipement
+function handleEquipmentCardClick(event, equipmentId, currentState) {
+    // Ne pas activer le toggle si on clique sur le menu ou ses boutons
+    if (event.target.closest('.equipment-menu-container')) {
+        return;
+    }
+    toggleEquipment(equipmentId, currentState);
+}
+
+// Gestion du menu trois points
+function toggleEquipmentMenu(event, equipmentId) {
+    event.stopPropagation(); // Empêcher le toggle de l'équipement
+    
+    const menu = document.getElementById(`equipment-menu-${equipmentId}`);
+    const allMenus = document.querySelectorAll('.equipment-menu');
+    
+    // Fermer tous les autres menus
+    allMenus.forEach(m => {
+        if (m !== menu) {
+            m.classList.remove('show');
+        }
+    });
+    
+    // Toggle le menu actuel
+    menu.classList.toggle('show');
+}
+
+// Fermer tous les menus
+function closeEquipmentMenus() {
+    document.querySelectorAll('.equipment-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+}
+
+// Fermer les menus quand on clique ailleurs
+document.addEventListener('click', (event) => {
+    if (!event.target.closest('.equipment-menu-container')) {
+        closeEquipmentMenus();
+    }
+    if (!event.target.closest('.sensor-menu-container')) {
+        closeSensorMenus();
+    }
+    if (!event.target.closest('.rule-menu-container')) {
+        closeRuleMenus();
+    }
+    if (!event.target.closest('.header-menu-btn') && !event.target.closest('.header-menu')) {
+        closeHeaderMenu();
+    }
+    if (!event.target.closest('#plan-menu') && !event.target.closest('.header-menu-btn[onclick*="togglePlanMenu"]')) {
+        closePlanMenu();
+    }
+});
+
+// Rule menu functions
+function toggleRuleMenu(event, ruleId) {
+    event.stopPropagation();
+    
+    const menu = document.getElementById(`rule-menu-${ruleId}`);
+    const allMenus = document.querySelectorAll('.rule-menu');
+    
+    // Fermer tous les autres menus
+    allMenus.forEach(m => {
+        if (m !== menu) {
+            m.classList.remove('show');
+        }
+    });
+    
+    // Toggle le menu actuel
+    menu.classList.toggle('show');
+}
+
+function closeRuleMenus() {
+    document.querySelectorAll('.rule-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+}
+
+// Header menu functions
+function toggleHeaderMenu(event) {
+    event.stopPropagation();
+    
+    const menu = document.getElementById('header-menu');
+    menu.classList.toggle('show');
+}
+
+function closeHeaderMenu() {
+    const menu = document.getElementById('header-menu');
+    if (menu) {
+        menu.classList.remove('show');
+    }
+}
+
+// Plan menu functions
+function togglePlanMenu(event) {
+    event.stopPropagation();
+    
+    const menu = document.getElementById('plan-menu');
+    menu.classList.toggle('show');
+}
+
+function closePlanMenu() {
+    const menu = document.getElementById('plan-menu');
+    if (menu) {
+        menu.classList.remove('show');
+    }
+}
+
+function showEditInteriorModal() {
+    closePlanMenu();
+    openGridEditor();
+}
+
+// Sensor menu functions
+function toggleSensorMenu(event, sensorId) {
+    event.stopPropagation();
+    
+    const menu = document.getElementById(`sensor-menu-${sensorId}`);
+    const allMenus = document.querySelectorAll('.sensor-menu');
+    
+    // Fermer tous les autres menus
+    allMenus.forEach(m => {
+        if (m !== menu) {
+            m.classList.remove('show');
+        }
+    });
+    
+    // Toggle le menu actuel
+    menu.classList.toggle('show');
+}
+
+function closeSensorMenus() {
+    document.querySelectorAll('.sensor-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+}
+
+// Modal de modification de capteur
+function showEditSensorModal(sensorId) {
+    const sensor = sensors.find(s => s.id === sensorId);
+    
+    if (!sensor) {
+        alert('Capteur introuvable');
+        return;
+    }
+    
+    currentEditSensorId = sensorId;
+    
+    document.getElementById('edit-sensor-name').value = sensor.name;
+    document.getElementById('edit-sensor-modal').style.display = 'flex';
+    
+    closeSensorMenus();
+}
+
+async function submitEditSensor() {
+    const sensorId = currentEditSensorId;
+    const name = document.getElementById('edit-sensor-name').value.trim();
+    
+    if (!name) {
+        alert('Le nom du capteur est requis');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/sensors/${sensorId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        
+        if (response.ok) {
+            await loadSensors();
+            document.getElementById('edit-sensor-modal').style.display = 'none';
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Erreur lors de la modification');
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la modification');
+    }
+}
+
+// Modal de modification d'équipement
+function showEditEquipmentModal(equipmentId) {
+    const equipment = equipments.find(e => e.id === equipmentId);
+    
+    if (!equipment) {
+        alert('Équipement introuvable');
+        return;
+    }
+    
+    currentEditEquipmentId = equipmentId;
+    
+    // Vérifier les dépendances
+    const dependencies = checkEquipmentDependencies(equipmentId);
+    const warningDiv = document.getElementById('edit-equipment-warning');
+    
+    if (dependencies.hasRules) {
+        const rulesList = dependencies.rules.map(r => 
+            `<li style="margin: 0.25rem 0;">
+                <strong>${r.name}</strong> 
+                <span style="font-size: 0.8125rem; color: #92400e;">(${r.sensor?.name || 'Capteur'} → ${r.equipment?.name || 'Équipement'} → ${r.action_state})</span>
+            </li>`
+        ).join('');
+        
+        warningDiv.innerHTML = `
+            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+                <strong>⚠️ Attention :</strong> Cet équipement est utilisé dans ${dependencies.rules.length} règle(s) d'automatisation :
+                <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">${rulesList}</ul>
+                <small style="color: #92400e; display: block; margin-top: 0.5rem;">
+                    La modification du type peut créer des incohérences (états incompatibles : on/off vs open/closed).
+                </small>
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="auto-resolve-conflicts" style="width: auto; cursor: pointer;">
+                    <span>🔧 Résoudre automatiquement les conflits</span>
+                </label>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.25rem; margin-left: 1.5rem;">
+                    Les règles avec des états incompatibles seront supprimées automatiquement
+                </small>
+            </div>
+        `;
+        warningDiv.style.display = 'block';
+    } else {
+        warningDiv.style.display = 'none';
+    }
+    
+    // Remplir le formulaire
+    document.getElementById('edit-equipment-name').value = equipment.name;
+    document.getElementById('edit-equipment-type').value = equipment.type;
+    
+    // Stocker le type original pour détecter les changements
+    document.getElementById('edit-equipment-type').dataset.originalType = equipment.type;
+    
+    // Afficher le modal
+    document.getElementById('edit-equipment-modal').style.display = 'block';
+}
+
+// Vérifier les dépendances d'un équipement
+function checkEquipmentDependencies(equipmentId) {
+    const dependencies = {
+        hasRules: false,
+        rules: []
+    };
+    
+    // Vérifier les règles d'automatisation
+    const relatedRules = automationRules.filter(rule => rule.equipment_id === equipmentId);
+    if (relatedRules.length > 0) {
+        dependencies.hasRules = true;
+        dependencies.rules = relatedRules;
+    }
+    
+    return dependencies;
+}
+
+// Vérifier si un état est compatible avec un type d'équipement
+function isStateCompatible(equipmentType, state) {
+    const shutterDoorStates = ['open', 'closed'];
+    const lightSoundStates = ['on', 'off'];
+    
+    if (equipmentType === 'shutter' || equipmentType === 'door') {
+        return shutterDoorStates.includes(state);
+    } else if (equipmentType === 'light' || equipmentType === 'sound_system') {
+        return lightSoundStates.includes(state);
+    }
+    return true;
+}
+
+// Trouver les règles avec états incompatibles
+function findIncompatibleRules(equipmentId, newType) {
+    return automationRules.filter(rule => {
+        if (rule.equipment_id !== equipmentId) return false;
+        return !isStateCompatible(newType, rule.action_state);
+    });
+}
+
+// Supprimer plusieurs règles
+async function deleteMultipleRules(ruleIds) {
+    const results = { success: [], failed: [] };
+    
+    for (const ruleId of ruleIds) {
+        try {
+            const response = await fetch(`/api/automation/rules/${ruleId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                results.success.push(ruleId);
+            } else {
+                results.failed.push(ruleId);
+            }
+        } catch (error) {
+            results.failed.push(ruleId);
+        }
+    }
+    
+    return results;
+}
+
+// Soumettre la modification d'équipement
+async function submitEditEquipment(e) {
+    e.preventDefault();
+    
+    if (!currentEditEquipmentId) return;
+    
+    const name = document.getElementById('edit-equipment-name').value.trim();
+    const type = document.getElementById('edit-equipment-type').value;
+    const originalType = document.getElementById('edit-equipment-type').dataset.originalType;
+    const autoResolve = document.getElementById('auto-resolve-conflicts')?.checked || false;
+    
+    if (!name) {
+        alert('Le nom est requis');
+        return;
+    }
+    
+    // Si le type change et qu'il y a des règles avec états incompatibles
+    if (type !== originalType) {
+        const incompatibleRules = findIncompatibleRules(currentEditEquipmentId, type);
+        
+        if (incompatibleRules.length > 0) {
+            if (autoResolve) {
+                // Résolution automatique : supprimer les règles incompatibles
+                const confirmed = confirm(
+                    `🔧 Résolution automatique activée\n\n` +
+                    `${incompatibleRules.length} règle(s) avec des états incompatibles seront supprimées :\n` +
+                    incompatibleRules.map(r => `• ${r.name} (action: ${r.action_state})`).join('\n') +
+                    `\n\nVoulez-vous continuer ?`
+                );
+                
+                if (!confirmed) return;
+                
+                // Supprimer les règles incompatibles
+                const deleteResults = await deleteMultipleRules(incompatibleRules.map(r => r.id));
+                
+                if (deleteResults.failed.length > 0) {
+                    alert(`⚠️ Erreur : ${deleteResults.failed.length} règle(s) n'ont pas pu être supprimées. Veuillez réessayer.`);
+                    return;
+                }
+            } else {
+                // Sans résolution auto : juste avertir
+                const dependencies = checkEquipmentDependencies(currentEditEquipmentId);
+                const ruleNames = dependencies.rules.map(r => r.name).join(', ');
+                const confirmed = confirm(
+                    `⚠️ ATTENTION : ${incompatibleRules.length} règle(s) auront des états incompatibles :\n` +
+                    incompatibleRules.map(r => `• ${r.name} (état actuel: "${r.action_state}" incompatible avec le nouveau type)`).join('\n') +
+                    `\n\nCes règles ne fonctionneront plus correctement.\n\n` +
+                    `💡 Conseil : Cochez "Résoudre automatiquement" pour supprimer ces règles.\n\n` +
+                    `Voulez-vous continuer quand même ?`
+                );
+                
+                if (!confirmed) return;
+            }
+        }
+    }
+    
+    const data = { name, type };
+    
+    try {
+        const response = await fetch(`/api/equipments/${currentEditEquipmentId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            closeModals();
+            await loadEquipments();
+            await loadAutomationRules(); // Recharger les règles
+            displayHouseGrid(); // Rafraîchir la grille
+            
+            if (type !== originalType) {
+                const incompatibleRules = findIncompatibleRules(currentEditEquipmentId, type);
+                if (autoResolve && incompatibleRules.length > 0) {
+                    alert(`Équipement modifié avec succès.\n\n${incompatibleRules.length} règle(s) incompatible(s) ont été supprimées automatiquement.`);
+                } else {
+                    alert('Équipement modifié avec succès.');
+                }
+            } else {
+                alert('Équipement modifié avec succès');
+            }
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Erreur lors de la modification');
+        }
+    } catch (error) {
+        alert('Erreur de connexion');
+    }
+}
 
 function showEditRolesModal(equipmentId) {
     currentEditEquipmentId = equipmentId;
@@ -956,6 +1429,12 @@ function editHouse() {
     document.getElementById('edit-house-modal').style.display = 'block';
 }
 
+// Alias pour le menu
+function showEditHouseModal() {
+    closeHeaderMenu();
+    editHouse();
+}
+
 // Fermer le modal de modification
 function closeEditHouseModal() {
     document.getElementById('edit-house-modal').style.display = 'none';
@@ -988,7 +1467,7 @@ async function submitEditHouse(e) {
             document.getElementById('house-name').textContent = house.name;
             document.getElementById('house-title').textContent = house.name;
             document.getElementById('house-info').textContent = 
-                `${house.address || 'Pas d\'adresse'} | ${house.length} × ${house.width}`;
+                `${house.address || 'Pas d\'adresse'} | ${house.length * house.width} m²`;
             
             // Rafraîchir le plan de la maison
             displayHouseGrid();
@@ -1046,7 +1525,8 @@ async function loadAutomationRules() {
         const response = await fetch(`/api/automation/rules?house_id=${houseId}`);
         if (response.ok) {
             const data = await response.json();
-            automationRules = data.rules;
+            // Trier les règles par ID (ordre de création) pour maintenir un ordre stable
+            automationRules = data.rules.sort((a, b) => a.id - b.id);
             displayAutomationRules();
             updateRuleSelects();
         }
@@ -1063,7 +1543,7 @@ function displayAutomationRules() {
     if (!grid) return;
     
     if (automationRules.length === 0) {
-        grid.innerHTML = '<p>Aucune règle. Créez votre première règle d\'automatisation !</p>';
+        grid.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">Aucune règle. Créez votre première règle d\'automatisation !</p>';
         return;
     }
     
@@ -1081,34 +1561,39 @@ function displayAutomationRules() {
             '!=': '≠'
         }[rule.condition_operator] || rule.condition_operator;
         
-        const actionsHtml = isAdmin ? `
-                <div class="actions">
-                    <button class="btn ${rule.is_active ? 'btn-warning' : 'btn-success'}" 
-                            onclick="toggleRule(${rule.id}, ${rule.is_active})">
-                        ${rule.is_active ? '⏸️ Désactiver' : '▶️ Activer'}
+        const menuHtml = isAdmin ? `
+                <div class="rule-menu-container">
+                    <button class="rule-menu-btn" onclick="toggleRuleMenu(event, ${rule.id})" title="Options">
+                        ⋮
                     </button>
-                    <button class="btn btn-primary" onclick="editRule(${rule.id})">
-                        ✏️ Modifier
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteRule(${rule.id})">
-                        🗑️ Supprimer
-                    </button>
+                    <div class="rule-menu" id="rule-menu-${rule.id}">
+                        <button onclick="toggleRule(${rule.id}, ${rule.is_active})">${rule.is_active ? 'Désactiver' : 'Activer'}</button>
+                        <button onclick="editRule(${rule.id})">Modifier</button>
+                        <button onclick="deleteRule(${rule.id})" style="color: #ef4444;">Supprimer</button>
+                    </div>
                 </div>` : '';
         
         return `
-            <div class="card">
-                <h4>🤖 ${rule.name}</h4>
-                ${rule.description ? `<p style="color: #666; font-size: 14px;">${rule.description}</p>` : ''}
-                <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                    <p style="margin: 5px 0;"><strong>SI</strong> ${rule.sensor ? rule.sensor.name : 'Capteur'} ${operatorSymbol} ${rule.condition_value}</p>
-                    <p style="margin: 5px 0;"><strong>ALORS</strong> ${rule.equipment ? rule.equipment.name : 'Équipement'} → ${rule.action_state}</p>
+            <div class="card" style="position: relative;">
+                ${menuHtml}
+                <div style="display: flex; align-items: start; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span style="font-size: 1.5rem; line-height: 1;">⚙️</span>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 0.25rem 0;">${rule.name}</h4>
+                        ${rule.description ? `<p style="color: var(--text-muted); font-size: 0.8125rem; margin: 0;">${rule.description}</p>` : ''}
+                    </div>
                 </div>
-                <p style="font-size: 12px; color: #999;">
-                    Créée: ${new Date(rule.created_at).toLocaleDateString()}
-                    ${rule.last_triggered ? ` | Dernière activation: ${new Date(rule.last_triggered).toLocaleString()}` : ''}
-                </p>
-                <p>${statusBadge}</p>
-                ${actionsHtml}
+                <div style="margin: 0.75rem 0; padding: 0.75rem; background: var(--background-color); border-left: 3px solid var(--primary-color); border-radius: 4px;">
+                    <p style="margin: 0.25rem 0; font-size: 0.8125rem;"><strong>SI</strong> ${rule.sensor ? rule.sensor.name : 'Capteur'} ${operatorSymbol} ${rule.condition_value}</p>
+                    <p style="margin: 0.25rem 0; font-size: 0.8125rem;"><strong>ALORS</strong> ${rule.equipment ? rule.equipment.name : 'Équipement'} → ${rule.action_state}</p>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 0.5rem 0;">
+                    ${statusBadge}
+                    <span style="font-size: 0.6875rem; color: var(--text-muted);">
+                        ${new Date(rule.created_at).toLocaleDateString()}
+                        ${rule.last_triggered ? ` • ${new Date(rule.last_triggered).toLocaleTimeString()}` : ''}
+                    </span>
+                </div>
             </div>
         `;
     }).join('');
@@ -1287,9 +1772,9 @@ document.getElementById('rule-form').addEventListener('submit', async (e) => {
         await loadAutomationRules();
         
         if (errorCount === 0) {
-            alert(`✅ ${successCount} règle(s) créée(s) avec succès !`);
+            alert(`${successCount} règle(s) créée(s) avec succès !`);
         } else {
-            alert(`⚠️ ${successCount} règle(s) créée(s), ${errorCount} erreur(s)`);
+            alert(`${successCount} règle(s) créée(s), ${errorCount} erreur(s)`);
         }
     } catch (error) {
         alert('Erreur de connexion');
@@ -1391,7 +1876,7 @@ async function updateRule(ruleId) {
             editingRuleId = null; // Réinitialiser le mode
             closeModals();
             await loadAutomationRules();
-            alert('✅ Règle modifiée avec succès');
+            alert('Règle modifiée avec succès');
         } else {
             const error = await response.json();
             alert('Erreur: ' + (error.error || 'Impossible de modifier la règle'));
@@ -1412,7 +1897,7 @@ async function deleteRule(ruleId) {
         
         if (response.ok) {
             await loadAutomationRules();
-            alert('✅ Règle supprimée');
+            alert('Règle supprimée');
         }
     } catch (error) {
         alert('Erreur de suppression');
@@ -1436,9 +1921,9 @@ async function refreshSensorInGrid(sensorData) {
     
     // Déclencher l'automatisation pour TOUS les capteurs
     // Cela permet aux règles d'automatisation de réagir en temps réel
-    console.log('🤖 [House] Capteur changé, déclenchement automatisation automatique...');
+    console.log('[House] Capteur changé, déclenchement automatisation automatique...');
     await triggerAutomation(true);
-    console.log('✅ [House] Automatisation déclenchée');
+    console.log('[House] Automatisation déclenchée');
 }
 
 /**
@@ -1479,11 +1964,15 @@ function refreshEquipmentInGrid(equipmentData) {
 
 async function toggleMovementMode() {
     movementMode = !movementMode;
-    const btn = document.getElementById('simulate-movement-btn');
+    
+    // Update button visibility
+    const simulateBtn = document.getElementById('simulate-btn');
+    const stopBtn = document.getElementById('stop-simulate-btn');
     
     if (movementMode) {
-        btn.textContent = '🚫 Arrêter simulation';
-        btn.style.background = '#dc3545';
+        // Show stop button, hide simulate button
+        if (simulateBtn) simulateBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'block';
         
         // Initialize user at house entrance (outside)
         const entranceX = 0;
@@ -1492,9 +1981,12 @@ async function toggleMovementMode() {
         
         // Refresh grid to show positions
         displayHouseGrid();
+        
+        console.log('Mode simulation activé');
     } else {
-        btn.textContent = '🚶 Simuler déplacement';
-        btn.style.background = '#17a2b8';
+        // Show simulate button, hide stop button
+        if (simulateBtn) simulateBtn.style.display = 'block';
+        if (stopBtn) stopBtn.style.display = 'none';
         
         // Deactivate position
         await deactivateMyPosition();
@@ -1505,6 +1997,14 @@ async function toggleMovementMode() {
         
         // Refresh grid
         displayHouseGrid();
+        
+        console.log('Mode simulation désactivé');
+    }
+}
+
+async function stopSimulation() {
+    if (movementMode) {
+        await toggleMovementMode();
     }
 }
 
@@ -1518,7 +2018,8 @@ async function loadUserPositions() {
                 userPositions.set(pos.user_id, {
                     x: pos.x,
                     y: pos.y,
-                    username: pos.username
+                    username: pos.username,
+                    profile_image: pos.profile_image
                 });
             });
         }
@@ -1543,7 +2044,8 @@ async function updateMyPosition(x, y) {
             userPositions.set(data.position.user_id, {
                 x: data.position.x,
                 y: data.position.y,
-                username: data.position.username
+                username: data.position.username,
+                profile_image: data.position.profile_image
             });
             
             // Check for presence sensors at new position
@@ -1701,7 +2203,8 @@ function handlePositionUpdate(data) {
         userPositions.set(data.user_id, {
             x: data.x,
             y: data.y,
-            username: data.username
+            username: data.username,
+            profile_image: data.profile_image
         });
         displayHouseGrid();
     } else if (data.type === 'user_position_deactivated') {

@@ -4,179 +4,211 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - SmartHome</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/main.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --radius: 8px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
         .navbar {
-            background: #007bff;
-            color: white;
-            padding: 15px 30px;
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 64px;
         }
         
         .navbar h1 {
-            font-size: 24px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0;
         }
         
         .navbar-right {
             display: flex;
-            gap: 20px;
+            gap: 1rem;
             align-items: center;
         }
-        
-        .invitations-btn {
-            position: relative;
-            background: #ffc107;
-            color: #333;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
+
+        button {
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
             cursor: pointer;
-            font-weight: bold;
         }
-        
-        .invitations-btn:hover {
-            background: #e0a800;
-        }
-        
-        .badge-count {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background: #dc3545;
+
+        .btn-primary {
+            background-color: var(--primary-color);
             color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            font-weight: 500;
+            font-size: 0.875rem;
+            box-shadow: var(--shadow-sm);
         }
         
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background-color: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .btn-outline:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .btn-danger {
+            background-color: white;
+            color: var(--danger-color);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+        }
+
+        .btn-danger:hover {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+        }
+
         .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.75rem;
             cursor: pointer;
+            padding: 0.25rem;
+            border-radius: var(--radius);
         }
         
         .user-info:hover {
-            opacity: 0.8;
+            background-color: #f9fafb;
         }
         
         .profile-pic {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid white;
+            border: 1px solid var(--border-color);
         }
-        
-        .btn-logout {
-            background: #dc3545;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
+
         .container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 0 20px;
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
         }
-        
+
         .header-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 2rem;
         }
-        
-        .btn-primary {
-            background: #28a745;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+
+        .header-actions h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0;
         }
-        
-        .btn-primary:hover {
-            background: #218838;
+
+        .search-section {
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
         }
-        
+
+        .search-box {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
         .houses-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
         }
         
         .house-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
             cursor: pointer;
-            position: relative;
         }
         
         .house-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
-        .house-card .actions {
-            position: relative;
-            z-index: 10;
+
+        .role-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-weight: 500;
+            display: inline-block;
         }
-        
-        .house-card h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        .house-card p {
-            color: #666;
-            margin-bottom: 15px;
-        }
-        
-        .house-card .actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .btn-small {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .btn-view {
-            background: #007bff;
-            color: white;
-        }
-        
-        .btn-edit {
-            background: #ffc107;
-            color: #333;
-        }
-        
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
-        
+
+        .role-owner { background: #dbeafe; color: #1e40af; }
+        .role-admin { background: #e0e7ff; color: #3730a3; }
+        .role-occupant { background: #f3f4f6; color: #374151; }
+
         .modal {
             display: none;
             position: fixed;
@@ -186,298 +218,116 @@
             height: 100%;
             background: rgba(0,0,0,0.5);
             z-index: 1000;
+            backdrop-filter: blur(2px);
         }
         
         .modal-content {
             background: white;
             max-width: 500px;
             margin: 100px auto;
-            padding: 30px;
-            border-radius: 10px;
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
+
+        .form-group { margin-bottom: 1.25rem; }
         
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
         }
         
         .form-group input {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 0.625rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-sizing: border-box;
+            font-family: inherit;
         }
-        
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
         .address-validation {
-            margin-top: 5px;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 14px;
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
             display: none;
         }
         
-        .address-validation.validating {
-            display: block;
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-        
-        .address-validation.valid {
-            display: block;
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-        
-        .address-validation.invalid {
-            display: block;
-            background: #ffebee;
-            color: #c62828;
-        }
-        
-        input.address-valid {
-            border-color: #4caf50 !important;
-            background: #f1f8f4;
-        }
-        
-        input.address-invalid {
-            border-color: #f44336 !important;
-            background: #fff5f5;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: #666;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 50px;
-            color: #666;
-        }
-        
-        .rooms-list {
-            margin-top: 10px;
-            padding-left: 20px;
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .role-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .role-proprietaire {
-            background: #28a745;
-            color: white;
-        }
-        
-        .role-administrateur {
-            background: #007bff;
-            color: white;
-        }
-        
-        .role-occupant {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .section-divider {
-            margin: 40px 0 20px;
-            padding: 10px 0;
-            border-bottom: 2px solid #ddd;
-        }
-        
-        .section-title {
-            font-size: 20px;
-            color: #333;
-            font-weight: bold;
-        }
-        
-        .search-houses-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-        
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .search-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        
-        .btn-search {
-            background: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        .search-results {
-            display: grid;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
+        .address-validation.valid { background: #ecfdf5; color: #065f46; }
+        .address-validation.invalid { background: #fef2f2; color: #991b1b; }
+        .address-validation.validating { background: #eff6ff; color: #1e40af; }
+
         .search-result-item {
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        
-        .search-result-info {
-            flex: 1;
-        }
-        
-        .search-result-info h4 {
-            margin: 0 0 5px 0;
-            color: #333;
-        }
-        
-        .search-result-info p {
-            margin: 0;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .btn-request {
-            background: #ffc107;
-            color: #333;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .btn-request:hover {
-            background: #e0a800;
-        }
-        
-        .btn-request:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        .status-pending {
-            background: #ffc107;
-            color: #333;
-        }
-        
-        .status-accepted {
-            background: #28a745;
-            color: white;
-        }
-        
-        .status-rejected {
-            background: #dc3545;
-            color: white;
-        }
+        .search-result-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>🏠 SmartHome</h1>
+        <h1>SmartHome</h1>
         <div class="navbar-right">
-            <button class="invitations-btn" onclick="goToInvitations()" id="invitations-btn" style="display: none;">
-                ✉️ Invitations
-                <span class="badge-count" id="invitations-count">0</span>
+            <button class="btn-outline" onclick="goToInvitations()" id="invitations-btn" style="display: none;">
+                Invitations <span id="invitations-count" style="background:var(--danger-color); color:white; padding:0 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span>
             </button>
             <div class="user-info" onclick="goToProfile()">
-                <img id="profile-pic" 
-                     src="https://via.placeholder.com/40?text=U" 
-                     alt="Profile" 
-                     class="profile-pic">
-                <span id="username">Utilisateur</span>
+                <img id="profile-pic" src="https://via.placeholder.com/32" alt="Profile" class="profile-pic">
+                <span id="username" style="font-weight:500; font-size:0.875rem; color:var(--text-main);">Utilisateur</span>
             </div>
-            <button class="btn-logout" onclick="logout()">Déconnexion</button>
+            <button class="btn-danger" onclick="logout()">Déconnexion</button>
         </div>
     </nav>
 
     <div class="container">
-        <!-- Section recherche de maisons -->
-        <div class="search-houses-section">
-            <h3>🔍 Rechercher une maison</h3>
-            <p style="color: #666; margin-bottom: 15px;">
+        <div class="search-section">
+            <h3 style="margin-top:0; font-size:1.125rem; font-weight:600;">Rechercher une maison</h3>
+            <p style="color:var(--text-muted); font-size:0.875rem; margin-bottom:1rem;">
                 Trouvez une maison publique et demandez l'accès pour devenir occupant
             </p>
             <div class="search-box">
-                <input type="text" 
-                       id="search-house-input" 
-                       class="search-input" 
-                       placeholder="Nom de la maison..."
-                       onkeyup="handleSearchKeyup(event)">
-                <button class="btn-search" onclick="searchHouses()">Rechercher</button>
+                <input type="text" id="search-house-input" class="search-input" placeholder="Nom de la maison..." onkeyup="handleSearchKeyup(event)">
+                <button class="btn-outline" onclick="searchHouses()">Rechercher</button>
             </div>
-            <div id="search-results" class="search-results"></div>
+            <div id="search-results" style="margin-top:1rem;"></div>
         </div>
 
         <div class="header-actions">
             <h2>Mes Maisons</h2>
-            <button class="btn-primary" onclick="showAddHouseModal()">
-                ➕ Ajouter une maison
-            </button>
+            <button class="btn-primary" onclick="showAddHouseModal()">Ajouter une maison</button>
         </div>
 
-        <div id="loading" class="loading">Chargement...</div>
+        <div id="loading" style="text-align:center; padding:3rem; color:var(--text-muted);">Chargement...</div>
         <div id="houses-container" class="houses-grid" style="display: none;"></div>
-        <div id="empty-state" class="empty-state" style="display: none;">
+        <div id="empty-state" style="text-align:center; padding:3rem; color:var(--text-muted); display:none;">
             <p>Vous n'avez pas encore de maison.</p>
-            <p>Cliquez sur "Ajouter une maison" pour commencer !</p>
         </div>
     </div>
 
-    <!-- Modal Ajouter/Modifier maison -->
     <div id="house-modal" class="modal">
         <div class="modal-content">
-            <h2 id="modal-title">Ajouter une maison</h2>
+            <h2 id="modal-title" style="margin-top:0; font-size:1.25rem;">Ajouter une maison</h2>
             <form id="house-form">
                 <div class="form-group">
-                    <label for="house-name">Nom *</label>
+                    <label for="house-name">Nom</label>
                     <input type="text" id="house-name" required>
                 </div>
                 <div class="form-group">
-                    <label for="house-address">Adresse *</label>
-                    <input type="text" 
-                           id="house-address" 
-                           placeholder="Ex: Paris, 15 Rue de la Paix 75002"
-                           required>
+                    <label for="house-address">Adresse</label>
+                    <input type="text" id="house-address" placeholder="Ex: 15 Rue de la Paix, Paris" required>
                     <div id="address-validation" class="address-validation"></div>
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        L'adresse doit être reconnue par l'API météo (ville, code postal...)
-                    </small>
                 </div>
                 <div class="form-group">
                     <label for="house-length">Longueur (cases)</label>
@@ -487,16 +337,10 @@
                     <label for="house-width">Largeur (cases)</label>
                     <input type="number" id="house-width" min="1" max="50" value="10">
                 </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn-outline" onclick="closeModal()">Annuler</button>
+                    <button type="button" id="edit-inside-btn" class="btn-outline" style="display: none;" onclick="editInsideFromModal()">Éditer intérieur</button>
                     <button type="submit" class="btn-primary">Enregistrer</button>
-                    <button type="button" class="btn-small" onclick="closeModal()">Annuler</button>
-                    <button type="button" 
-                            id="edit-inside-btn" 
-                            class="btn-small" 
-                            style="background: #6c757d; color: white; display: none;" 
-                            onclick="editInsideFromModal()">
-                        🏠 Éditer intérieur
-                    </button>
                 </div>
             </form>
         </div>
@@ -509,26 +353,21 @@
         let addressValidationTimeout = null;
         let isAddressValid = false;
 
-        // Valider l'adresse avec l'API météo
         async function validateAddress(address) {
             const validationDiv = document.getElementById('address-validation');
             const addressInput = document.getElementById('house-address');
             
             if (!address || address.trim().length < 3) {
                 validationDiv.style.display = 'none';
-                addressInput.classList.remove('address-valid', 'address-invalid');
                 isAddressValid = false;
                 return;
             }
             
-            // Afficher "Vérification..."
             validationDiv.className = 'address-validation validating';
-            validationDiv.textContent = '🔍 Vérification de l\'adresse...';
-            addressInput.classList.remove('address-valid', 'address-invalid');
+            validationDiv.style.display = 'block';
+            validationDiv.textContent = 'Vérification...';
             
             try {
-                // Créer une maison temporaire pour tester l'API météo
-                const testHouseId = editingHouseId || 'test';
                 const response = await fetch(`/api/weather/validate-address`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -539,57 +378,44 @@
                     const data = await response.json();
                     if (data.valid) {
                         validationDiv.className = 'address-validation valid';
-                        validationDiv.innerHTML = `✅ Adresse valide: <strong>${data.location}</strong>`;
-                        addressInput.classList.add('address-valid');
-                        addressInput.classList.remove('address-invalid');
+                        validationDiv.innerHTML = `Adresse valide: <strong>${data.location}</strong>`;
                         isAddressValid = true;
                     } else {
                         validationDiv.className = 'address-validation invalid';
-                        validationDiv.textContent = '❌ Adresse non reconnue par l\'API météo';
-                        addressInput.classList.add('address-invalid');
-                        addressInput.classList.remove('address-valid');
+                        validationDiv.textContent = 'Adresse non reconnue';
                         isAddressValid = false;
                     }
                 } else {
                     validationDiv.className = 'address-validation invalid';
-                    validationDiv.textContent = '❌ Impossible de valider l\'adresse';
-                    addressInput.classList.add('address-invalid');
-                    addressInput.classList.remove('address-valid');
+                    validationDiv.textContent = 'Impossible de valider';
                     isAddressValid = false;
                 }
             } catch (error) {
                 validationDiv.className = 'address-validation invalid';
-                validationDiv.textContent = '⚠️ Erreur de connexion';
-                addressInput.classList.add('address-invalid');
-                addressInput.classList.remove('address-valid');
+                validationDiv.textContent = 'Erreur de connexion';
                 isAddressValid = false;
             }
         }
         
-        // Validation en temps réel avec debounce
         function setupAddressValidation() {
             const addressInput = document.getElementById('house-address');
             addressInput.addEventListener('input', (e) => {
                 clearTimeout(addressValidationTimeout);
                 addressValidationTimeout = setTimeout(() => {
                     validateAddress(e.target.value);
-                }, 800); // Attendre 800ms après la dernière frappe
+                }, 800);
             });
         }
         
-        // Vérifier l'authentification au chargement
         async function checkAuth() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (response.ok) {
                     currentUser = await response.json();
                     document.getElementById('username').textContent = currentUser.username;
-                    
-                    // Afficher la photo de profil si elle existe
                     if (currentUser.profile_image) {
                         document.getElementById('profile-pic').src = currentUser.profile_image;
                     }
-                    
                     loadHouses();
                 } else {
                     window.location.href = '/app/login.html';
@@ -599,12 +425,10 @@
             }
         }
         
-        // Aller au profil
         function goToProfile() {
             window.location.href = '/app/profile.html';
         }
 
-        // Charger les maisons
         async function loadHouses() {
             try {
                 const response = await fetch('/api/houses');
@@ -612,7 +436,7 @@
                     const data = await response.json();
                     houses = data.houses;
                     displayHouses();
-                    checkEditParam(); // Vérifier si on doit ouvrir le modal d'édition
+                    checkEditParam();
                 } else {
                     alert('Erreur de chargement des maisons');
                 }
@@ -621,7 +445,6 @@
             }
         }
 
-        // Afficher les maisons
         function displayHouses() {
             const loading = document.getElementById('loading');
             const container = document.getElementById('houses-container');
@@ -643,8 +466,7 @@
                 const card = document.createElement('div');
                 card.className = 'house-card';
                 card.onclick = (e) => {
-                    // Ne pas naviguer si on clique sur un bouton
-                    if (!e.target.closest('.actions')) {
+                    if (!e.target.closest('button')) {
                         viewHouse(house.id);
                     }
                 };
@@ -652,65 +474,49 @@
                 let roleClass = 'role-occupant';
                 let roleLabel = house.role || 'Occupant';
                 if (house.is_owner) {
-                    roleClass = 'role-proprietaire';
+                    roleClass = 'role-owner';
                     roleLabel = 'Propriétaire';
                 } else if (house.role === 'administrateur') {
-                    roleClass = 'role-administrateur';
-                    roleLabel = 'Administrateur';
+                    roleClass = 'role-admin';
+                    roleLabel = 'Admin';
                 }
                 
                 card.innerHTML = `
-                    <div class="role-badge ${roleClass}">${roleLabel}</div>
-                    <h3>${house.name}</h3>
-                    <p>${house.address || 'Pas d\'adresse'}</p>
-                    <p><strong>Dimensions:</strong> ${house.length} × ${house.width}</p>
-                    ${house.rooms && house.rooms.length > 0 ? `
-                        <div class="rooms-list">
-                            <strong>Pièces:</strong>
-                            <ul>
-                                ${house.rooms.map(r => `<li>${r.name}</li>`).join('')}
-                            </ul>
-                        </div>
-                    ` : '<p style="color: #999;">Aucune pièce</p>'}
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:1rem;">
+                        <h3 style="margin:0; font-size:1.125rem; font-weight:600;">${house.name}</h3>
+                        <span class="role-badge ${roleClass}">${roleLabel}</span>
+                    </div>
+                    <div style="color:var(--text-muted); font-size:0.875rem;">
+                        <div style="margin-bottom:0.25rem;">${house.address || 'Pas d\'adresse'}</div>
+                        <div>${house.length * house.width} m²</div>
+                    </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // Afficher le modal d'ajout
         function showAddHouseModal() {
             editingHouseId = null;
             document.getElementById('modal-title').textContent = 'Ajouter une maison';
             document.getElementById('house-form').reset();
-            
-            // Réactiver les dimensions pour une nouvelle maison
             document.getElementById('house-length').disabled = false;
             document.getElementById('house-width').disabled = false;
-            
-            // Cacher le bouton "Éditer intérieur"
             document.getElementById('edit-inside-btn').style.display = 'none';
-            
-            // Réinitialiser la validation
             document.getElementById('address-validation').style.display = 'none';
-            document.getElementById('house-address').classList.remove('address-valid', 'address-invalid');
             isAddressValid = false;
-            
             document.getElementById('house-modal').style.display = 'block';
             setupAddressValidation();
         }
         
-        // Vérifier si on doit ouvrir le modal d'édition au chargement
         function checkEditParam() {
             const params = new URLSearchParams(window.location.search);
             const editId = params.get('edit');
             if (editId && houses.length > 0) {
                 editHouse(parseInt(editId));
-                // Nettoyer l'URL
                 window.history.replaceState({}, '', '/app/dashboard.html');
             }
         }
 
-        // Modifier une maison
         function editHouse(id) {
             const house = houses.find(h => h.id === id);
             if (!house) return;
@@ -721,17 +527,12 @@
             document.getElementById('house-address').value = house.address || '';
             document.getElementById('house-length').value = house.length;
             document.getElementById('house-width').value = house.width;
-            
-            // Désactiver les dimensions car elles ne peuvent pas être modifiées
             document.getElementById('house-length').disabled = true;
             document.getElementById('house-width').disabled = true;
-            
-            // Afficher le bouton "Éditer intérieur"
             document.getElementById('edit-inside-btn').style.display = 'inline-block';
             
-            // Valider l'adresse existante
             if (house.address) {
-                isAddressValid = true; // Considérer l'adresse existante comme valide
+                isAddressValid = true;
                 setTimeout(() => validateAddress(house.address), 100);
             }
             
@@ -739,50 +540,24 @@
             setupAddressValidation();
         }
 
-        // Voir une maison (rediriger vers la page de détails)
         function viewHouse(id) {
             window.location.href = `/app/house.html?id=${id}`;
         }
         
-        // Éditer l'intérieur depuis le modal
         function editInsideFromModal() {
             if (editingHouseId) {
                 window.location.href = `/houses/edit_inside/${editingHouseId}`;
             }
         }
 
-        // Supprimer une maison
-        async function deleteHouse(id) {
-            if (!confirm('Êtes-vous sûr de vouloir supprimer cette maison ?')) return;
-
-            try {
-                const response = await fetch(`/api/houses/${id}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    loadHouses();
-                } else {
-                    alert('Erreur lors de la suppression');
-                }
-            } catch (error) {
-                alert('Erreur de connexion au serveur');
-            }
-        }
-
-        // Fermer le modal
         function closeModal() {
             document.getElementById('house-modal').style.display = 'none';
         }
 
-        // Soumettre le formulaire
         document.getElementById('house-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Vérifier que l'adresse est valide
             if (!isAddressValid) {
-                alert('❌ Veuillez saisir une adresse valide reconnue par l\'API météo.');
-                document.getElementById('house-address').focus();
+                alert('Veuillez saisir une adresse valide.');
                 return;
             }
 
@@ -821,21 +596,19 @@
             }
         });
 
-        // Charger les invitations
         async function loadInvitations() {
             try {
                 const response = await fetch('/api/invitations');
                 if (response.ok) {
                     const data = await response.json();
                     const count = data.invitations.length;
-                    
                     if (count > 0) {
-                        document.getElementById('invitations-btn').style.display = 'block';
+                        document.getElementById('invitations-btn').style.display = 'inline-flex';
                         document.getElementById('invitations-count').textContent = count;
                     }
                 }
             } catch (error) {
-                console.error('Erreur lors du chargement des invitations:', error);
+                console.error('Erreur invitations:', error);
             }
         }
 
@@ -843,17 +616,16 @@
             window.location.href = '/app/invitations.html';
         }
 
-        // Rechercher des maisons
         async function searchHouses() {
             const query = document.getElementById('search-house-input').value.trim();
             const resultsDiv = document.getElementById('search-results');
             
             if (query.length < 2) {
-                resultsDiv.innerHTML = '<p style="color: #999; text-align: center;">Entrez au moins 2 caractères</p>';
+                resultsDiv.innerHTML = '<p style="color:var(--text-muted); text-align:center;">Entrez au moins 2 caractères</p>';
                 return;
             }
             
-            resultsDiv.innerHTML = '<p style="text-align: center;">Recherche...</p>';
+            resultsDiv.innerHTML = '<p style="text-align:center;">Recherche...</p>';
             
             try {
                 const response = await fetch(`/api/houses/search?q=${encodeURIComponent(query)}`);
@@ -861,10 +633,10 @@
                     const data = await response.json();
                     displaySearchResults(data.houses);
                 } else {
-                    resultsDiv.innerHTML = '<p style="color: #dc3545;">Erreur lors de la recherche</p>';
+                    resultsDiv.innerHTML = '<p style="color:var(--danger-color);">Erreur lors de la recherche</p>';
                 }
             } catch (error) {
-                resultsDiv.innerHTML = '<p style="color: #dc3545;">Erreur de connexion</p>';
+                resultsDiv.innerHTML = '<p style="color:var(--danger-color);">Erreur de connexion</p>';
             }
         }
         
@@ -878,7 +650,7 @@
             const resultsDiv = document.getElementById('search-results');
             
             if (houses.length === 0) {
-                resultsDiv.innerHTML = '<p style="color: #999; text-align: center;">Aucune maison trouvée</p>';
+                resultsDiv.innerHTML = '<p style="color:var(--text-muted); text-align:center;">Aucune maison trouvée</p>';
                 return;
             }
             
@@ -887,24 +659,24 @@
                 let actionButton = '';
                 
                 if (house.relationship_status === 'owner') {
-                    statusInfo = '<span class="status-badge" style="background: #28a745; color: white;">Vous êtes propriétaire</span>';
+                    statusInfo = '<span class="role-badge role-owner">Propriétaire</span>';
                 } else if (house.relationship_status === 'accepted') {
-                    statusInfo = '<span class="status-badge status-accepted">Membre</span>';
+                    statusInfo = '<span class="role-badge role-occupant">Membre</span>';
                 } else if (house.relationship_status === 'pending') {
-                    statusInfo = '<span class="status-badge status-pending">Demande en attente</span>';
+                    statusInfo = '<span class="role-badge" style="background:#fef3c7; color:#92400e;">En attente</span>';
                 } else if (house.relationship_status === 'rejected') {
-                    statusInfo = '<span class="status-badge status-rejected">Demande refusée</span>';
-                    actionButton = `<button class="btn-request" onclick="requestAccess(${house.id})">Redemander l'accès</button>`;
+                    statusInfo = '<span class="role-badge" style="background:#fee2e2; color:#991b1b;">Refusé</span>';
+                    actionButton = `<button class="btn-outline" style="font-size:0.75rem;" onclick="requestAccess(${house.id})">Redemander</button>`;
                 } else {
-                    actionButton = `<button class="btn-request" onclick="requestAccess(${house.id})">Demander l'accès</button>`;
+                    actionButton = `<button class="btn-outline" style="font-size:0.75rem;" onclick="requestAccess(${house.id})">Demander accès</button>`;
                 }
                 
                 return `
                     <div class="search-result-item">
-                        <div class="search-result-info">
-                            <h4>${house.name}</h4>
-                            <p>Propriétaire: ${house.owner_username || 'Inconnu'}</p>
-                            ${statusInfo}
+                        <div>
+                            <h4 style="margin:0 0 0.25rem 0; font-size:0.875rem;">${house.name}</h4>
+                            <p style="margin:0; color:var(--text-muted); font-size:0.75rem;">Propriétaire: ${house.owner_username || 'Inconnu'}</p>
+                            <div style="margin-top:0.25rem;">${statusInfo}</div>
                         </div>
                         ${actionButton}
                     </div>
@@ -913,8 +685,8 @@
         }
         
         async function requestAccess(houseId) {
-            const message = prompt('Message optionnel pour le propriétaire:');
-            if (message === null) return; // Annulé
+            const message = prompt('Message pour le propriétaire:');
+            if (message === null) return;
             
             try {
                 const response = await fetch(`/api/houses/${houseId}/request-access`, {
@@ -924,8 +696,8 @@
                 });
                 
                 if (response.ok) {
-                    alert('Demande d\'accès envoyée !');
-                    searchHouses(); // Rafraîchir les résultats
+                    alert('Demande envoyée !');
+                    searchHouses();
                 } else {
                     const error = await response.json();
                     alert(error.error || 'Erreur lors de la demande');
@@ -935,7 +707,6 @@
             }
         }
 
-        // Déconnexion
         async function logout() {
             try {
                 await fetch('/api/auth/logout', { method: 'POST' });
@@ -945,7 +716,6 @@
             }
         }
 
-        // Initialiser
         checkAuth();
         loadInvitations();
     </script>

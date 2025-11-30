@@ -1,14 +1,142 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier intérieur - {{ house.name }} - SmartHome</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --radius: 8px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
 
-{% block title %}Modifier intérieur - {{ house.name }}{% end %}
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
 
-{% block extra_css %}
-<link rel="stylesheet" href="/static/css/grid-editor.css">
-{% end %}
+        .navbar {
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
 
-{% block content %}
-<h2>Modifier l'intérieur de {{ house.name }}</h2>
-<p>Glissez-déposez les pièces sur la grille ({{ house.length }}x{{ house.width }})</p>
+        .navbar h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 2rem auto; 
+            padding: 0 1.5rem; 
+        }
+        
+        .header { 
+            background: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header h2 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--surface-color);
+            color: var(--text-main);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-color);
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>SmartHome - Éditeur d'intérieur</h1>
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="submit" form="grid-form" class="btn btn-primary">✓ Valider</button>
+            <a href="/app/house.html?id={{ house.id }}" class="btn btn-secondary">✗ Annuler</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h2>Modifier l'intérieur de {{ house.name }}</h2>
+                <p>Glissez-déposez les pièces sur la grille ({{ house.length }}x{{ house.width }})</p>
+            </div>
+        </div>
 
 {% if error %}
     <p style="color: red;">{{ error }}</p>
@@ -19,20 +147,14 @@
     <div class="rooms-panel">
         <!-- Onglets -->
         <div class="tabs-container">
-            <button class="tab-btn active" onclick="switchTab('rooms', event)">🚪 Pièces</button>
-            <button class="tab-btn" onclick="switchTab('sensors', event)">🌡️ Capteurs</button>
-            <button class="tab-btn" onclick="switchTab('equipments', event)">⚙️ Équipements</button>
+            <button class="tab-btn active" onclick="switchTab('rooms', event)">Pièces</button>
+            <button class="tab-btn" onclick="switchTab('sensors', event)">Capteurs</button>
+            <button class="tab-btn" onclick="switchTab('equipments', event)">Équipements</button>
         </div>
 
         <!-- Contenu Pièces -->
         <div id="tab-rooms" class="tab-panel active">
-            <div style="margin-bottom: 1rem;">
-                <button class="btn btn-success" onclick="showAddRoomModal()" style="width: 100%;">
-                    ➕ Ajouter une pièce
-                </button>
-            </div>
-            
-            <h3>🚪 Pièces disponibles</h3>
+            <h3>Pièces disponibles</h3>
             <div id="available-rooms">
                 {% for room in house.rooms %}
                     <div class="room-item" data-room-id="{{ room.id }}" data-room-name="{{ room.name }}">
@@ -49,17 +171,33 @@
                     </div>
                 {% end %}
             </div>
-            <div class="legend">
-                <h4>Légende:</h4>
-                <p>🟦 = Pièce (2xxx)</p>
-                <p>⬜ = Vide (0)</p>
-                <p><strong>Mode peinture:</strong> Cliquez sur une pièce puis peignez plusieurs cases</p>
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-success" onclick="showAddRoomModal()" style="width: 100%;">
+                    ➕ Ajouter une pièce
+                </button>
+            </div>
+            <!-- Paint tools invisible pour éviter les mouvements de layout -->
+            <div class="paint-tools" id="room-paint-tools" style="visibility: hidden;">
+                <div class="paint-actions">
+                    <button class="btn-paint btn-paint-add active">
+                        ➕ Ajouter couverture
+                    </button>
+                    <button class="btn-paint btn-paint-remove">
+                        ➖ Retirer couverture
+                    </button>
+                </div>
+                <button class="btn-clear">
+                    Effacer complètement ce capteur
+                </button>
             </div>
         </div>
 
         <!-- Contenu Capteurs -->
         <div id="tab-sensors" class="tab-panel">
-            <h3>🌡️ Capteurs</h3>
+            <h3>Capteurs</h3>
+            <div id="available-sensors">
+                <!-- Chargé dynamiquement -->
+            </div>
             <div class="paint-tools" id="sensor-paint-tools">
                 <div class="paint-actions">
                     <button onclick="setPaintAction('add')" class="btn-paint btn-paint-add active" id="paint-add">
@@ -70,17 +208,17 @@
                     </button>
                 </div>
                 <button onclick="clearSensorFromGrid()" class="btn-clear" id="sensor-clear">
-                    🗑️ Tout effacer ce capteur
+                    Effacer complètement ce capteur
                 </button>
-            </div>
-            <div id="available-sensors">
-                <!-- Chargé dynamiquement -->
             </div>
         </div>
 
         <!-- Contenu Équipements -->
         <div id="tab-equipments" class="tab-panel">
-            <h3>⚙️ Équipements</h3>
+            <h3>Équipements</h3>
+            <div id="available-equipments">
+                <!-- Chargé dynamiquement -->
+            </div>
             <div class="paint-tools" id="equipment-paint-tools">
                 <div class="paint-actions">
                     <button onclick="setPaintAction('add')" class="btn-paint btn-paint-add active" id="paint-add-eq">
@@ -91,11 +229,8 @@
                     </button>
                 </div>
                 <button onclick="clearEquipmentFromGrid()" class="btn-clear" id="equipment-clear">
-                    🗑️ Tout effacer cet équipement
+                    Effacer complètement cet équipement
                 </button>
-            </div>
-            <div id="available-equipments">
-                <!-- Chargé dynamiquement -->
             </div>
         </div>
     </div>
@@ -114,8 +249,8 @@
         </div>
         
         <div class="grid-controls">
-            <button type="button" class="btn btn-secondary" onclick="clearGrid()">🗑️ Effacer la grille</button>
-            <button type="button" class="btn btn-warning" onclick="removeSelectedRoom()">❌ Retirer pièce sélectionnée</button>
+            <button type="button" class="btn btn-secondary" onclick="clearGrid()">Effacer la grille</button>
+            <button type="button" class="btn btn-warning" onclick="removeSelectedRoom()">Retirer pièce sélectionnée</button>
         </div>
     </div>
 </div>
@@ -124,10 +259,6 @@
 <form method="post" id="grid-form">
     {% module xsrf_form_html() %}
     <input type="hidden" name="grid" id="grid-data">
-    <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Valider</button>
-        <a href="/app/house.html?id={{ house.id }}" class="btn btn-secondary">Annuler</a>
-    </div>
 </form>
 
 <style>
@@ -368,17 +499,21 @@
 }
 
 .paint-tools {
-    margin-top: 1rem;
-    padding: 1rem;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
     background: #f8f9fa;
     border-radius: 8px;
     border: 2px dashed #dee2e6;
-    display: none;
+    flex-shrink: 0;
+    display: block !important;
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
 }
 
 .paint-tools.active {
-    display: block;
-    animation: slideIn 0.3s ease;
+    opacity: 1;
+    pointer-events: auto;
 }
 
 @keyframes slideIn {
@@ -402,6 +537,10 @@
     font-weight: bold;
     font-size: 0.9rem;
     transition: all 0.2s;
+}
+
+.paint-tools:not(.active) .btn-paint {
+    cursor: not-allowed;
 }
 
 .btn-paint:hover {
@@ -444,6 +583,10 @@
 
 .btn-clear:disabled {
     opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.paint-tools:not(.active) .btn-clear {
     cursor: not-allowed;
 }
 
@@ -587,6 +730,18 @@
 
 .btn-cancel:hover {
     background: #5a6268;
+}
+
+#available-sensors,
+#available-equipments {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+#available-rooms {
+    max-height: 400px;
+    overflow-y: auto;
 }
 </style>
 
@@ -1138,16 +1293,14 @@ function selectItemForPaint(type, id, name) {
     // Marquer l'item sélectionné
     event.currentTarget.classList.add('painting');
     
-    // Afficher les outils de peinture
+    // Activer les outils de peinture
     if (type === 'sensor') {
         const tools = document.getElementById('sensor-paint-tools');
         tools.classList.add('active');
-        tools.style.display = 'block';
         document.getElementById('sensor-clear').disabled = false;
     } else if (type === 'equipment') {
         const tools = document.getElementById('equipment-paint-tools');
         tools.classList.add('active');
-        tools.style.display = 'block';
         document.getElementById('equipment-clear').disabled = false;
     }
     
@@ -1323,9 +1476,9 @@ function switchTab(tabName, event) {
         event.target.classList.add('active');
     }
     
-    // Cacher les outils de peinture et réinitialiser les sélections
-    document.getElementById('sensor-paint-tools').style.display = 'none';
-    document.getElementById('equipment-paint-tools').style.display = 'none';
+    // Désactiver les outils de peinture et réinitialiser les sélections
+    document.getElementById('sensor-paint-tools').classList.remove('active');
+    document.getElementById('equipment-paint-tools').classList.remove('active');
     document.querySelectorAll('.sensor-item, .equipment-item, .room-item').forEach(item => {
         item.classList.remove('painting', 'selected');
     });
@@ -1461,19 +1614,19 @@ function displayEquipments() {
 function getSensorIcon(type) {
     const icons = {
         'temperature': '🌡️',
-        'light': '💡',
-        'humidity': '🌧️',
-        'motion': '👤'
+        'luminosity': '✨',
+        'rain': '🌧️',
+        'presence': '👤'
     };
     return icons[type] || '📡';
 }
 
 function getEquipmentIcon(type) {
     const icons = {
-        'window': '🪟',
+        'shutter': '🪟',
         'door': '🚪',
         'light': '💡',
-        'speaker': '🔊'
+        'sound_system': '🔊'
     };
     return icons[type] || '⚙️';
 }
@@ -1709,10 +1862,18 @@ async function deleteRoomFromAPI(roomId) {
 // Initialiser au chargement
 initGrid();
 loadSensorsAndEquipments();
+
+// Fermer le modal en cliquant à l'extérieur
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('room-modal');
+    if (modal && e.target === modal) {
+        closeRoomModal();
+    }
+});
 </script>
 
 <!-- Modal pour ajouter une pièce -->
-<div id="room-modal" class="modal">
+<div id="room-modal" class="modal" onclick="event.target === this && closeRoomModal()">
     <div class="modal-content">
         <h3>➕ Ajouter une pièce</h3>
         <div class="form-group">
@@ -1726,4 +1887,5 @@ loadSensorsAndEquipments();
     </div>
 </div>
 
-{% end %}
+</body>
+</html>
