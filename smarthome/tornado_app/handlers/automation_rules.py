@@ -1,6 +1,7 @@
 """
 API handlers for automation rules.
 """
+
 import json
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -18,7 +19,7 @@ class AutomationRulesListHandler(BaseAPIHandler):
     async def get(self):
         """List all rules for a house."""
         house_id = self.get_argument("house_id", None)
-        
+
         if not house_id:
             self.write_error_json("house_id requis", 400)
             return
@@ -28,38 +29,48 @@ class AutomationRulesListHandler(BaseAPIHandler):
                 select(AutomationRule)
                 .options(
                     selectinload(AutomationRule.sensor),
-                    selectinload(AutomationRule.equipment)
+                    selectinload(AutomationRule.equipment),
                 )
                 .where(AutomationRule.house_id == int(house_id))
             )
             rules = result.scalars().all()
 
-            self.write_json({
-                "rules": [
-                    {
-                        "id": r.id,
-                        "name": r.name,
-                        "description": r.description,
-                        "is_active": r.is_active,
-                        "sensor": {
-                            "id": r.sensor.id,
-                            "name": r.sensor.name,
-                            "type": r.sensor.type
-                        } if r.sensor else None,
-                        "condition_operator": r.condition_operator,
-                        "condition_value": r.condition_value,
-                        "equipment": {
-                            "id": r.equipment.id,
-                            "name": r.equipment.name,
-                            "type": r.equipment.type
-                        } if r.equipment else None,
-                        "action_state": r.action_state,
-                        "created_at": r.created_at,
-                        "last_triggered": r.last_triggered
-                    }
-                    for r in rules
-                ]
-            })
+            self.write_json(
+                {
+                    "rules": [
+                        {
+                            "id": r.id,
+                            "name": r.name,
+                            "description": r.description,
+                            "is_active": r.is_active,
+                            "sensor": (
+                                {
+                                    "id": r.sensor.id,
+                                    "name": r.sensor.name,
+                                    "type": r.sensor.type,
+                                }
+                                if r.sensor
+                                else None
+                            ),
+                            "condition_operator": r.condition_operator,
+                            "condition_value": r.condition_value,
+                            "equipment": (
+                                {
+                                    "id": r.equipment.id,
+                                    "name": r.equipment.name,
+                                    "type": r.equipment.type,
+                                }
+                                if r.equipment
+                                else None
+                            ),
+                            "action_state": r.action_state,
+                            "created_at": r.created_at,
+                            "last_triggered": r.last_triggered,
+                        }
+                        for r in rules
+                    ]
+                }
+            )
 
     async def post(self):
         """Create a new automation rule."""
@@ -69,10 +80,16 @@ class AutomationRulesListHandler(BaseAPIHandler):
             self.write_error_json("Invalid JSON", 400)
             return
 
-        required = ["house_id", "name", "sensor_id",
-                    "condition_operator", "condition_value",
-                    "equipment_id", "action_state"]
-        
+        required = [
+            "house_id",
+            "name",
+            "sensor_id",
+            "condition_operator",
+            "condition_value",
+            "equipment_id",
+            "action_state",
+        ]
+
         for field in required:
             if field not in data:
                 self.write_error_json(f"Champ requis: {field}", 400)
@@ -84,15 +101,15 @@ class AutomationRulesListHandler(BaseAPIHandler):
                 house_id = int(data["house_id"])
                 sensor_id = int(data["sensor_id"])
                 equipment_id = int(data["equipment_id"])
-                
+
                 # Check that le capteur et l'équipement existent
                 sensor = await session.get(Sensor, sensor_id)
                 equipment = await session.get(Equipment, equipment_id)
-                
+
                 if not sensor:
                     self.write_error_json("Capteur introuvable", 404)
                     return
-                
+
                 if not equipment:
                     self.write_error_json("Équipement introuvable", 404)
                     return
@@ -106,20 +123,20 @@ class AutomationRulesListHandler(BaseAPIHandler):
                     condition_value=float(data["condition_value"]),
                     equipment_id=equipment_id,
                     action_state=data["action_state"],
-                    is_active=data.get("is_active", True)
+                    is_active=data.get("is_active", True),
                 )
 
                 session.add(rule)
                 await session.commit()
                 await session.refresh(rule)
 
-                self.write_json({
-                    "message": "Rule created",
-                    "rule": {
-                        "id": rule.id,
-                        "name": rule.name
-                    }
-                }, 201)
+                self.write_json(
+                    {
+                        "message": "Rule created",
+                        "rule": {"id": rule.id, "name": rule.name},
+                    },
+                    201,
+                )
             except Exception as e:
                 await session.rollback()
                 print(f"Error creating automation rule: {e}")
@@ -140,7 +157,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
                 select(AutomationRule)
                 .options(
                     selectinload(AutomationRule.sensor),
-                    selectinload(AutomationRule.equipment)
+                    selectinload(AutomationRule.equipment),
                 )
                 .where(AutomationRule.id == int(rule_id))
             )
@@ -150,27 +167,29 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
                 self.write_error_json("Règle introuvable", 404)
                 return
 
-            self.write_json({
-                "id": rule.id,
-                "name": rule.name,
-                "description": rule.description,
-                "is_active": rule.is_active,
-                "sensor": {
-                    "id": rule.sensor.id,
-                    "name": rule.sensor.name,
-                    "type": rule.sensor.type
-                },
-                "condition_operator": rule.condition_operator,
-                "condition_value": rule.condition_value,
-                "equipment": {
-                    "id": rule.equipment.id,
-                    "name": rule.equipment.name,
-                    "type": rule.equipment.type
-                },
-                "action_state": rule.action_state,
-                "created_at": rule.created_at,
-                "last_triggered": rule.last_triggered
-            })
+            self.write_json(
+                {
+                    "id": rule.id,
+                    "name": rule.name,
+                    "description": rule.description,
+                    "is_active": rule.is_active,
+                    "sensor": {
+                        "id": rule.sensor.id,
+                        "name": rule.sensor.name,
+                        "type": rule.sensor.type,
+                    },
+                    "condition_operator": rule.condition_operator,
+                    "condition_value": rule.condition_value,
+                    "equipment": {
+                        "id": rule.equipment.id,
+                        "name": rule.equipment.name,
+                        "type": rule.equipment.type,
+                    },
+                    "action_state": rule.action_state,
+                    "created_at": rule.created_at,
+                    "last_triggered": rule.last_triggered,
+                }
+            )
 
     async def put(self, rule_id):
         """Modifier une règle"""
@@ -182,7 +201,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
 
         async with async_session_maker() as session:
             rule = await session.get(AutomationRule, int(rule_id))
-            
+
             if not rule:
                 self.write_error_json("Règle introuvable", 404)
                 return
@@ -205,9 +224,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
                 rule.condition_value = float(data["condition_value"])
             if "equipment_id" in data:
                 # Check that l'équipement existe
-                equipment = await session.get(
-                    Equipment, int(data["equipment_id"])
-                )
+                equipment = await session.get(Equipment, int(data["equipment_id"]))
                 if equipment:
                     rule.equipment_id = int(data["equipment_id"])
             if "action_state" in data:
@@ -221,7 +238,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
         """Supprimer une règle"""
         async with async_session_maker() as session:
             rule = await session.get(AutomationRule, int(rule_id))
-            
+
             if not rule:
                 self.write_error_json("Règle introuvable", 404)
                 return

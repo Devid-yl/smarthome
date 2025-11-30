@@ -1,4 +1,5 @@
 """User position handlers for movement simulation."""
+
 import json
 from datetime import datetime
 from sqlalchemy import select, and_
@@ -24,9 +25,7 @@ class UserPositionHandler(BaseAPIHandler):
 
         async with async_session_maker() as session:
             # Verify user is member of house
-            perm = await get_user_house_permission(
-                session, user_id, house_id
-            )
+            perm = await get_user_house_permission(session, user_id, house_id)
             if perm == PermissionLevel.NONE:
                 self.write_error_json("Access denied", 403)
                 return
@@ -35,10 +34,12 @@ class UserPositionHandler(BaseAPIHandler):
             query = (
                 select(UserPosition, User)
                 .join(User, UserPosition.user_id == User.id)
-                .where(and_(
-                    UserPosition.house_id == house_id,
-                    UserPosition.is_active == True  # noqa: E712
-                ))
+                .where(
+                    and_(
+                        UserPosition.house_id == house_id,
+                        UserPosition.is_active == True,  # noqa: E712
+                    )
+                )
             )
             result = await session.execute(query)
             rows = result.all()
@@ -50,7 +51,7 @@ class UserPositionHandler(BaseAPIHandler):
                     "profile_image": user.profile_image,
                     "x": position.x,
                     "y": position.y,
-                    "last_update": position.last_update.isoformat()
+                    "last_update": position.last_update.isoformat(),
                 }
                 for position, user in rows
             ]
@@ -68,9 +69,7 @@ class UserPositionHandler(BaseAPIHandler):
 
         async with async_session_maker() as session:
             # Verify user is member of house
-            perm = await get_user_house_permission(
-                session, user_id, house_id
-            )
+            perm = await get_user_house_permission(session, user_id, house_id)
             if perm == PermissionLevel.NONE:
                 self.write_error_json("Access denied", 403)
                 return
@@ -101,16 +100,14 @@ class UserPositionHandler(BaseAPIHandler):
 
             if not (0 <= x < grid_width and 0 <= y < grid_height):
                 self.write_error_json(
-                    f"Position out of bounds (0-{grid_width-1}, "
-                    f"0-{grid_height-1})"
+                    f"Position out of bounds (0-{grid_width-1}, " f"0-{grid_height-1})"
                 )
                 return
 
             # Check if position exists for this user/house
-            query = select(UserPosition).where(and_(
-                UserPosition.house_id == house_id,
-                UserPosition.user_id == user_id
-            ))
+            query = select(UserPosition).where(
+                and_(UserPosition.house_id == house_id, UserPosition.user_id == user_id)
+            )
             result = await session.execute(query)
             position = result.scalar_one_or_none()
 
@@ -123,11 +120,7 @@ class UserPositionHandler(BaseAPIHandler):
             else:
                 # Create new position
                 position = UserPosition(
-                    house_id=house_id,
-                    user_id=user_id,
-                    x=x,
-                    y=y,
-                    is_active=True
+                    house_id=house_id, user_id=user_id, x=x, y=y, is_active=True
                 )
                 session.add(position)
 
@@ -141,9 +134,7 @@ class UserPositionHandler(BaseAPIHandler):
 
             # DÉTECTION AUTOMATIQUE DE PRÉSENCE
             # Trouver la pièce où se trouve l'utilisateur
-            await self._update_presence_sensors(
-                session, house, x, y, house_id
-            )
+            await self._update_presence_sensors(session, house, x, y, house_id)
             await session.commit()
 
             # Broadcast position update via WebSocket
@@ -155,7 +146,7 @@ class UserPositionHandler(BaseAPIHandler):
                 "profile_image": user.profile_image,
                 "x": x,
                 "y": y,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
             for client in RealtimeHandler.clients:
                 try:
@@ -164,16 +155,18 @@ class UserPositionHandler(BaseAPIHandler):
                     print(f"Error broadcasting position: {e}")
 
             # user is guaranteed to exist here due to check above
-            self.write({
-                "success": True,
-                "position": {
-                    "x": x,
-                    "y": y,
-                    "user_id": user_id,
-                    "username": user.username,
-                    "profile_image": user.profile_image
+            self.write(
+                {
+                    "success": True,
+                    "position": {
+                        "x": x,
+                        "y": y,
+                        "user_id": user_id,
+                        "username": user.username,
+                        "profile_image": user.profile_image,
+                    },
                 }
-            })
+            )
 
     async def delete(self, house_id: int):
         """Deactivate user position (user leaves house)."""
@@ -186,18 +179,15 @@ class UserPositionHandler(BaseAPIHandler):
 
         async with async_session_maker() as session:
             # Verify user is member of house
-            perm = await get_user_house_permission(
-                session, user_id, house_id
-            )
+            perm = await get_user_house_permission(session, user_id, house_id)
             if perm == PermissionLevel.NONE:
                 self.write_error_json("Access denied", 403)
                 return
 
             # Find and deactivate position
-            query = select(UserPosition).where(and_(
-                UserPosition.house_id == house_id,
-                UserPosition.user_id == user_id
-            ))
+            query = select(UserPosition).where(
+                and_(UserPosition.house_id == house_id, UserPosition.user_id == user_id)
+            )
             result = await session.execute(query)
             position = result.scalar_one_or_none()
 
@@ -210,7 +200,7 @@ class UserPositionHandler(BaseAPIHandler):
                     "type": "user_position_deactivated",
                     "house_id": house_id,
                     "user_id": user_id,
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.utcnow().isoformat(),
                 }
                 for client in RealtimeHandler.clients:
                     try:
@@ -219,9 +209,7 @@ class UserPositionHandler(BaseAPIHandler):
                         print(f"Error broadcasting deactivation: {e}")
 
             # Mettre à jour les capteurs de présence après départ
-            await self._update_presence_sensors_on_leave(
-                session, house_id, user_id
-            )
+            await self._update_presence_sensors_on_leave(session, house_id, user_id)
             await session.commit()
 
             self.write({"success": True})
@@ -233,10 +221,12 @@ class UserPositionHandler(BaseAPIHandler):
         Détecte la présence sur les CASES où sont placés les capteurs.
         """
         # Retrieve toutes les positions actives dans cette maison
-        query = select(UserPosition).where(and_(
-            UserPosition.house_id == house_id,
-            UserPosition.is_active == True  # noqa: E712
-        ))
+        query = select(UserPosition).where(
+            and_(
+                UserPosition.house_id == house_id,
+                UserPosition.is_active == True,  # noqa: E712
+            )
+        )
         result = await session.execute(query)
         all_positions = result.scalars().all()
 
@@ -247,15 +237,14 @@ class UserPositionHandler(BaseAPIHandler):
             if cell_key not in users_per_cell:
                 users_per_cell[cell_key] = 0
             users_per_cell[cell_key] += 1
-        
+
         # Retrieve tous les capteurs de présence
-        query = select(Sensor).where(and_(
-            Sensor.house_id == house_id,
-            Sensor.type == "presence"
-        ))
+        query = select(Sensor).where(
+            and_(Sensor.house_id == house_id, Sensor.type == "presence")
+        )
         result = await session.execute(query)
         presence_sensors = result.scalars().all()
-        
+
         # Pour chaque capteur, compter les utilisateurs sur ses cases
         if house.grid:
             for sensor in presence_sensors:
@@ -268,40 +257,35 @@ class UserPositionHandler(BaseAPIHandler):
                             cell_sensors = cell.get("sensors", [])
                             if sensor.id in cell_sensors:
                                 sensor_cells.append((col_idx, row_idx))
-                
+
                 # Compter les utilisateurs sur ces cases
                 user_count = 0
                 for cell_pos in sensor_cells:
                     user_count += users_per_cell.get(cell_pos, 0)
-                
+
                 # Mettre à jour la valeur du capteur
                 new_value = 1.0 if user_count > 0 else 0.0
-                
+
                 # Mettre à jour uniquement si changement
                 if sensor.value != new_value:
                     old_value = sensor.value
                     sensor.value = new_value
                     sensor.last_update = datetime.utcnow()
-                    
+
                     print(
                         f"[Presence] Sensor {sensor.id} ({sensor.name}) "
                         f"on {len(sensor_cells)} cell(s): "
                         f"{old_value} → {new_value} "
                         f"({user_count} user(s) detected)"
                     )
-                    
+
                     # Broadcaster la mise à jour du capteur via WebSocket
                     RealtimeHandler.broadcast_sensor_update(
-                        sensor.id,
-                        sensor.value,
-                        sensor.is_active,
-                        sensor.house_id
+                        sensor.id, sensor.value, sensor.is_active, sensor.house_id
                     )
-                    
+
                     # Déclencher les règles d'automatisation pour ce capteur
-                    await self._trigger_automation_for_sensor(
-                        session, sensor
-                    )
+                    await self._trigger_automation_for_sensor(session, sensor)
 
     async def _update_presence_sensors_on_leave(
         self, session, house_id, leaving_user_id
@@ -314,16 +298,18 @@ class UserPositionHandler(BaseAPIHandler):
         house = await session.get(House, house_id)
         if not house:
             return
-        
+
         # Retrieve toutes les positions actives restantes
-        query = select(UserPosition).where(and_(
-            UserPosition.house_id == house_id,
-            UserPosition.is_active == True,  # noqa: E712
-            UserPosition.user_id != leaving_user_id
-        ))
+        query = select(UserPosition).where(
+            and_(
+                UserPosition.house_id == house_id,
+                UserPosition.is_active == True,  # noqa: E712
+                UserPosition.user_id != leaving_user_id,
+            )
+        )
         result = await session.execute(query)
         remaining_positions = result.scalars().all()
-        
+
         # Grouper par cellule
         users_per_cell = {}
         for pos in remaining_positions:
@@ -331,15 +317,14 @@ class UserPositionHandler(BaseAPIHandler):
             if cell_key not in users_per_cell:
                 users_per_cell[cell_key] = 0
             users_per_cell[cell_key] += 1
-        
+
         # Retrieve tous les capteurs de présence
-        query = select(Sensor).where(and_(
-            Sensor.house_id == house_id,
-            Sensor.type == "presence"
-        ))
+        query = select(Sensor).where(
+            and_(Sensor.house_id == house_id, Sensor.type == "presence")
+        )
         result = await session.execute(query)
         presence_sensors = result.scalars().all()
-        
+
         # Pour chaque capteur, compter les utilisateurs sur ses cases
         if house.grid:
             for sensor in presence_sensors:
@@ -351,68 +336,65 @@ class UserPositionHandler(BaseAPIHandler):
                             cell_sensors = cell.get("sensors", [])
                             if sensor.id in cell_sensors:
                                 sensor_cells.append((col_idx, row_idx))
-                
+
                 # Compter les utilisateurs sur ces cases
                 user_count = 0
                 for cell_pos in sensor_cells:
                     user_count += users_per_cell.get(cell_pos, 0)
-                
+
                 # Mettre à jour la valeur
                 new_value = 1.0 if user_count > 0 else 0.0
-                
+
                 if sensor.value != new_value:
                     sensor.value = new_value
                     sensor.last_update = datetime.utcnow()
-                    
+
                     print(
                         f"[Presence] Sensor {sensor.id} updated "
                         f"after user left: {new_value}"
                     )
-                    
+
                     # Broadcaster
                     RealtimeHandler.broadcast_sensor_update(
-                        sensor.id,
-                        sensor.value,
-                        sensor.is_active,
-                        sensor.house_id
+                        sensor.id, sensor.value, sensor.is_active, sensor.house_id
                     )
-                    
+
                     # Déclencher automatisations
-                    await self._trigger_automation_for_sensor(
-                        session, sensor
-                    )
+                    await self._trigger_automation_for_sensor(session, sensor)
 
     async def _trigger_automation_for_sensor(self, session, sensor):
         """
         Déclenche les règles d'automatisation liées à un capteur spécifique.
         """
         from ..models import Equipment, EventHistory
-        
+
         # Retrieve les règles actives pour ce capteur
-        query = select(AutomationRule).where(and_(
-            AutomationRule.sensor_id == sensor.id,
-            AutomationRule.is_active == True  # noqa: E712
-        ))
+        query = select(AutomationRule).where(
+            and_(
+                AutomationRule.sensor_id == sensor.id,
+                AutomationRule.is_active == True,  # noqa: E712
+            )
+        )
         result = await session.execute(query)
         rules = result.scalars().all()
-        
+
         for rule in rules:
             # Évaluer la condition
             condition_met = False
             if sensor.value is not None:
-                if rule.condition_operator == '>':
+                if rule.condition_operator == ">":
                     condition_met = sensor.value > rule.condition_value
-                elif rule.condition_operator == '<':
+                elif rule.condition_operator == "<":
                     condition_met = sensor.value < rule.condition_value
-                elif rule.condition_operator == '>=':
+                elif rule.condition_operator == ">=":
                     condition_met = sensor.value >= rule.condition_value
-                elif rule.condition_operator == '<=':
+                elif rule.condition_operator == "<=":
                     condition_met = sensor.value <= rule.condition_value
-                elif rule.condition_operator == '==':
+                elif rule.condition_operator == "==":
                     condition_met = sensor.value == rule.condition_value
-                elif rule.condition_operator == '!=':
+                elif rule.condition_operator == "!=":
                     condition_met = sensor.value != rule.condition_value
-            
+
             if condition_met:
                 # Appliquer l'action
                 equipment = await session.get(Equipment, rule.equipment_id)
@@ -422,19 +404,19 @@ class UserPositionHandler(BaseAPIHandler):
                         equipment.state = rule.action_state
                         equipment.last_update = datetime.utcnow()
                         rule.last_triggered = datetime.utcnow()
-                        
+
                         print(
                             f"[Automation] Rule '{rule.name}' triggered: "
                             f"{equipment.name} {old_state} → "
                             f"{rule.action_state}"
                         )
-                        
+
                         # Enregistrer dans l'historique
                         event = EventHistory(
                             house_id=equipment.house_id,
                             user_id=None,
-                            event_type='automation_triggered',
-                            entity_type='automation_rule',
+                            event_type="automation_triggered",
+                            entity_type="automation_rule",
                             entity_id=rule.id,
                             description=(
                                 f"Règle '{rule.name}' déclenchée: "
@@ -453,16 +435,16 @@ class UserPositionHandler(BaseAPIHandler):
                                 "equipment_id": equipment.id,
                                 "equipment_name": equipment.name,
                                 "old_state": old_state,
-                                "new_state": rule.action_state
-                            }
+                                "new_state": rule.action_state,
+                            },
                         )
                         session.add(event)
-                        
+
                         # Broadcaster la mise à jour de l'équipement
                         RealtimeHandler.broadcast_equipment_update(
                             equipment.id,
                             equipment.type,
                             equipment.state,
                             equipment.is_active,
-                            equipment.house_id
+                            equipment.house_id,
                         )

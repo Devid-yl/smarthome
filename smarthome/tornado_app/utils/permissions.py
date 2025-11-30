@@ -1,10 +1,12 @@
 """Module de gestion des permissions pour les maisons et équipements."""
+
 from sqlalchemy import select, and_
 from ..models import House, HouseMember
 
 
 class PermissionLevel:
     """Niveaux de permission."""
+
     NONE = 0
     VIEW = 1
     CONTROL = 2
@@ -32,7 +34,7 @@ async def get_user_house_permission(session, user_id, house_id):
         and_(
             HouseMember.house_id == house_id,
             HouseMember.user_id == user_id,
-            HouseMember.status == 'accepted'
+            HouseMember.status == "accepted",
         )
     )
     result = await session.execute(query)
@@ -42,9 +44,9 @@ async def get_user_house_permission(session, user_id, house_id):
         return PermissionLevel.NONE
 
     # Mapper les rôles aux permissions
-    if member.role == 'administrateur':
+    if member.role == "administrateur":
         return PermissionLevel.MANAGE
-    elif member.role == 'occupant':
+    elif member.role == "occupant":
         return PermissionLevel.CONTROL
 
     return PermissionLevel.NONE
@@ -59,36 +61,36 @@ async def can_view_house(session, user_id, house_id):
 async def can_control_equipment(session, user_id, house_id, equipment=None):
     """
     Vérifie si l'utilisateur peut contrôler un équipement.
-    
+
     Args:
         session: Session de base de données
         user_id: ID de l'utilisateur
         house_id: ID de la maison
         equipment: Objet Equipment optionnel pour vérifier allowed_roles
-    
+
     Returns:
         bool: True si l'utilisateur peut contrôler l'équipement
     """
     permission = await get_user_house_permission(session, user_id, house_id)
-    
+
     # Pas de permission de base
     if permission < PermissionLevel.CONTROL:
         return False
-    
+
     # Le propriétaire peut TOUJOURS contrôler tous les équipements
     if permission == PermissionLevel.OWNER:
         return True
-    
+
     # Si pas d'équipement spécifique, vérifier juste la permission générale
     if not equipment:
         return True
-    
+
     # Vérifier les rôles autorisés pour cet équipement
     if equipment.allowed_roles:
         user_role = await get_user_role_in_house(session, user_id, house_id)
         # Si allowed_roles est défini et non vide, vérifier le rôle
         return user_role in equipment.allowed_roles
-    
+
     # Si allowed_roles est None ou vide, tous les rôles avec CONTROL+ peuvent
     return True
 
@@ -120,13 +122,13 @@ async def get_user_role_in_house(session, user_id, house_id):
         return None
 
     if house.user_id == user_id:
-        return 'proprietaire'
+        return "proprietaire"
 
     query = select(HouseMember).where(
         and_(
             HouseMember.house_id == house_id,
             HouseMember.user_id == user_id,
-            HouseMember.status == 'accepted'
+            HouseMember.status == "accepted",
         )
     )
     result = await session.execute(query)

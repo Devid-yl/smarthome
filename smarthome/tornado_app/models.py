@@ -10,7 +10,7 @@ class Base(DeclarativeBase):
 
 class House(Base):
     """House model.
-    
+
     Grid format (new layered system):
     Each cell is an object: {
         "base": 0|1|2xxx,  # 0=empty, 1=wall, 2xxx=room
@@ -19,6 +19,7 @@ class House(Base):
     }
     Or legacy format: simple integer array for backwards compatibility
     """
+
     __tablename__ = "houses"
 
     id = Column(Integer, primary_key=True)
@@ -30,13 +31,13 @@ class House(Base):
     grid = Column(JSONB, nullable=False)
 
     user = relationship("User", back_populates="houses")
-    rooms = relationship("Room", back_populates="house",
-                         cascade="all, delete-orphan")
+    rooms = relationship("Room", back_populates="house", cascade="all, delete-orphan")
 
 
 # 1
 class User(Base):
     """User model - clean Tornado version (no Django leftovers)."""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
@@ -54,6 +55,7 @@ class User(Base):
 # 2
 class Room(Base):
     """Room model."""
+
     __tablename__ = "rooms"
 
     id = Column(Integer, primary_key=True)
@@ -61,15 +63,18 @@ class Room(Base):
     name = Column(String(100), nullable=False)
 
     house = relationship("House", back_populates="rooms")
-    sensors = relationship("Sensor", back_populates="room",
-                           cascade="all, delete-orphan")
-    equipments = relationship("Equipment", back_populates="room",
-                              cascade="all, delete-orphan")
+    sensors = relationship(
+        "Sensor", back_populates="room", cascade="all, delete-orphan"
+    )
+    equipments = relationship(
+        "Equipment", back_populates="room", cascade="all, delete-orphan"
+    )
 
 
 # 3
 class Sensor(Base):
     """Sensor model - capteurs simulés."""
+
     __tablename__ = "sensors"
 
     id = Column(Integer, primary_key=True)
@@ -81,8 +86,7 @@ class Sensor(Base):
     value = Column(Float, nullable=True)  # Valeur actuelle
     unit = Column(String(20), nullable=True)  # °C, lux, %, etc.
     is_active = Column(Boolean, default=True, nullable=False)
-    last_update = Column(DateTime, default=datetime.utcnow,
-                         onupdate=datetime.utcnow)
+    last_update = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     room = relationship("Room", back_populates="sensors")
 
@@ -90,6 +94,7 @@ class Sensor(Base):
 # 4
 class Equipment(Base):
     """Equipment model - équipements contrôlés."""
+
     __tablename__ = "equipments"
 
     id = Column(Integer, primary_key=True)
@@ -98,14 +103,13 @@ class Equipment(Base):
     name = Column(String(100), nullable=False)
     type = Column(String(50), nullable=False)
     # Types: 'shutter', 'door', 'light', 'sound_system'
-    state = Column(String(50), default='off', nullable=False)
+    state = Column(String(50), default="off", nullable=False)
     # States: 'on'/'off', 'open'/'closed', 0-100 (percentage)
     is_active = Column(Boolean, default=True, nullable=False)
     allowed_roles = Column(JSONB, nullable=True)
     # Rôles autorisés: ['proprietaire', 'admin', 'occupant']
     # Si None/vide, tous peuvent modifier (défaut)
-    last_update = Column(DateTime, default=datetime.utcnow,
-                         onupdate=datetime.utcnow)
+    last_update = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     room = relationship("Room", back_populates="equipments")
 
@@ -113,6 +117,7 @@ class Equipment(Base):
 # 5
 class AutomationRule(Base):
     """Automation Rule model - règles d'automatisation personnalisables."""
+
     __tablename__ = "automation_rules"
 
     id = Column(Integer, primary_key=True)
@@ -120,18 +125,18 @@ class AutomationRule(Base):
     name = Column(String(200), nullable=False)  # Nom de la règle
     description = Column(String(500), nullable=True)  # Description
     is_active = Column(Boolean, default=True, nullable=False)
-    
+
     # Condition (capteur)
     sensor_id = Column(Integer, ForeignKey("sensors.id"), nullable=False)
     condition_operator = Column(String(10), nullable=False)
     # Opérateurs: '>', '<', '>=', '<=', '==', '!='
     condition_value = Column(Float, nullable=False)
-    
+
     # Action (équipement)
     equipment_id = Column(Integer, ForeignKey("equipments.id"), nullable=False)
     action_state = Column(String(50), nullable=False)
     # États: 'on', 'off', 'open', 'closed'
-    
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_triggered = Column(DateTime, nullable=True)
 
@@ -143,17 +148,18 @@ class AutomationRule(Base):
 # 6
 class HouseMember(Base):
     """House Member model - membres d'une maison avec invitations."""
+
     __tablename__ = "house_members"
 
     id = Column(Integer, primary_key=True)
     house_id = Column(Integer, ForeignKey("houses.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    role = Column(String(20), default='occupant', nullable=False)
+    role = Column(String(20), default="occupant", nullable=False)
     # Rôles: 'administrateur', 'occupant'
     invited_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     invited_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     accepted_at = Column(DateTime, nullable=True)
-    status = Column(String(20), default='pending', nullable=False)
+    status = Column(String(20), default="pending", nullable=False)
     # Statuts: 'pending', 'accepted', 'rejected'
 
     # Relations
@@ -165,6 +171,7 @@ class HouseMember(Base):
 # 7
 class EventHistory(Base):
     """Event History model - journalisation des événements."""
+
     __tablename__ = "event_history"
 
     id = Column(Integer, primary_key=True)
@@ -191,6 +198,7 @@ class EventHistory(Base):
 # 8
 class UserPosition(Base):
     """User Position model - position des utilisateurs dans une maison."""
+
     __tablename__ = "user_positions"
 
     id = Column(Integer, primary_key=True)
@@ -199,15 +207,8 @@ class UserPosition(Base):
     x = Column(Integer, nullable=False)  # Position X sur la grille
     y = Column(Integer, nullable=False)  # Position Y sur la grille
     is_active = Column(Boolean, default=True, nullable=False)
-    last_update = Column(DateTime, default=datetime.utcnow,
-                         onupdate=datetime.utcnow)
+    last_update = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relations
     house = relationship("House")
     user = relationship("User")
-
-
-
-
-
-

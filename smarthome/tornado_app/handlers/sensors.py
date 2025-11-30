@@ -39,8 +39,7 @@ class SensorsListHandler(BaseAPIHandler):
                     "value": s.value,
                     "unit": s.unit,
                     "is_active": s.is_active,
-                    "last_update": s.last_update.isoformat()
-                    if s.last_update else None
+                    "last_update": s.last_update.isoformat() if s.last_update else None,
                 }
                 for s in sensors
             ]
@@ -57,15 +56,13 @@ class SensorsListHandler(BaseAPIHandler):
 
         required = ["house_id", "name", "type"]
         if not all(k in data for k in required):
-            self.write_error_json(
-                f"Missing required fields: {', '.join(required)}")
+            self.write_error_json(f"Missing required fields: {', '.join(required)}")
             return
 
         # Validate sensor type
         valid_types = ["temperature", "luminosity", "rain", "presence"]
         if data["type"] not in valid_types:
-            self.write_error_json(
-                f"Invalid sensor type. Must be one of: {valid_types}")
+            self.write_error_json(f"Invalid sensor type. Must be one of: {valid_types}")
             return
 
         async with async_session_maker() as session:
@@ -76,7 +73,7 @@ class SensorsListHandler(BaseAPIHandler):
                 type=data["type"],
                 value=data.get("value", 0.0),
                 unit=data.get("unit", self._get_default_unit(data["type"])),
-                is_active=data.get("is_active", True)
+                is_active=data.get("is_active", True),
             )
             session.add(new_sensor)
             await session.commit()
@@ -88,41 +85,43 @@ class SensorsListHandler(BaseAPIHandler):
             event = EventHistory(
                 house_id=new_sensor.house_id,
                 user_id=user_id,
-                event_type='sensor_reading',
-                entity_type='sensor',
+                event_type="sensor_reading",
+                entity_type="sensor",
                 entity_id=new_sensor.id,
                 description=(
-                    f"Nouveau capteur ajouté: {new_sensor.name} "
-                    f"({new_sensor.type})"
+                    f"Nouveau capteur ajouté: {new_sensor.name} " f"({new_sensor.type})"
                 ),
                 event_metadata={
                     "action": "create",
                     "sensor_type": new_sensor.type,
                     "initial_value": new_sensor.value,
-                    "unit": new_sensor.unit
+                    "unit": new_sensor.unit,
                 },
-                ip_address=self.request.remote_ip
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
             await session.commit()
 
-            self.write_json({
-                "id": new_sensor.id,
-                "house_id": new_sensor.house_id,
-                "room_id": new_sensor.room_id,
-                "name": new_sensor.name,
-                "type": new_sensor.type,
-                "value": new_sensor.value,
-                "unit": new_sensor.unit,
-                "is_active": new_sensor.is_active
-            }, status=201)
+            self.write_json(
+                {
+                    "id": new_sensor.id,
+                    "house_id": new_sensor.house_id,
+                    "room_id": new_sensor.room_id,
+                    "name": new_sensor.name,
+                    "type": new_sensor.type,
+                    "value": new_sensor.value,
+                    "unit": new_sensor.unit,
+                    "is_active": new_sensor.is_active,
+                },
+                status=201,
+            )
 
     def _get_default_unit(self, sensor_type):
         units = {
             "temperature": "°C",
             "luminosity": "lux",
             "rain": "%",
-            "presence": "bool"
+            "presence": "bool",
         }
         return units.get(sensor_type, "")
 
@@ -144,18 +143,21 @@ class SensorDetailHandler(BaseAPIHandler):
                 self.write_error_json("Sensor not found", 404)
                 return
 
-            self.write_json({
-                "id": sensor.id,
-                "house_id": sensor.house_id,
-                "room_id": sensor.room_id,
-                "name": sensor.name,
-                "type": sensor.type,
-                "value": sensor.value,
-                "unit": sensor.unit,
-                "is_active": sensor.is_active,
-                "last_update": sensor.last_update.isoformat()
-                if sensor.last_update else None
-            })
+            self.write_json(
+                {
+                    "id": sensor.id,
+                    "house_id": sensor.house_id,
+                    "room_id": sensor.room_id,
+                    "name": sensor.name,
+                    "type": sensor.type,
+                    "value": sensor.value,
+                    "unit": sensor.unit,
+                    "is_active": sensor.is_active,
+                    "last_update": (
+                        sensor.last_update.isoformat() if sensor.last_update else None
+                    ),
+                }
+            )
 
     async def put(self, sensor_id):
         """Mettre à jour un capteur (valeur, état, etc.)"""
@@ -180,28 +182,19 @@ class SensorDetailHandler(BaseAPIHandler):
 
             # Mise à jour des champs
             if "name" in data:
-                changes["name"] = {
-                    "old": sensor.name,
-                    "new": data["name"]
-                }
+                changes["name"] = {"old": sensor.name, "new": data["name"]}
                 sensor.name = data["name"]
             if "value" in data:
-                changes["value"] = {
-                    "old": sensor.value,
-                    "new": data["value"]
-                }
+                changes["value"] = {"old": sensor.value, "new": data["value"]}
                 sensor.value = data["value"]
             if "is_active" in data:
                 changes["is_active"] = {
                     "old": sensor.is_active,
-                    "new": data["is_active"]
+                    "new": data["is_active"],
                 }
                 sensor.is_active = data["is_active"]
             if "unit" in data:
-                changes["unit"] = {
-                    "old": sensor.unit,
-                    "new": data["unit"]
-                }
+                changes["unit"] = {"old": sensor.unit, "new": data["unit"]}
                 sensor.unit = data["unit"]
 
             sensor.last_update = datetime.utcnow()
@@ -209,39 +202,36 @@ class SensorDetailHandler(BaseAPIHandler):
             # Enregistrer dans l'historique
             if changes:
                 user_id_cookie = self.get_secure_cookie("uid")
-                user_id = int(user_id_cookie.decode()) \
-                    if user_id_cookie else None
-                
+                user_id = int(user_id_cookie.decode()) if user_id_cookie else None
+
                 description_parts = []
                 if "value" in changes:
-                    old_v = changes['value']['old']
-                    new_v = changes['value']['new']
-                    description_parts.append(
-                        f"Valeur: {old_v} → {new_v}"
-                    )
+                    old_v = changes["value"]["old"]
+                    new_v = changes["value"]["new"]
+                    description_parts.append(f"Valeur: {old_v} → {new_v}")
                 if "is_active" in changes:
-                    old_a = changes['is_active']['old']
-                    new_a = changes['is_active']['new']
+                    old_a = changes["is_active"]["old"]
+                    new_a = changes["is_active"]["new"]
                     description_parts.append(f"Actif: {old_a} → {new_a}")
                 if "name" in changes or "unit" in changes:
                     description_parts.append("Configuration modifiée")
-                
+
                 desc = f"Capteur {sensor.name} modifié: "
-                desc += ', '.join(description_parts)
-                
+                desc += ", ".join(description_parts)
+
                 event = EventHistory(
                     house_id=sensor.house_id,
                     user_id=user_id,
-                    event_type='sensor_reading',
-                    entity_type='sensor',
+                    event_type="sensor_reading",
+                    entity_type="sensor",
                     entity_id=sensor.id,
                     description=desc,
                     event_metadata={
                         "action": "update",
                         "changes": changes,
-                        "sensor_type": sensor.type
+                        "sensor_type": sensor.type,
                     },
-                    ip_address=self.request.remote_ip
+                    ip_address=self.request.remote_ip,
                 )
                 session.add(event)
 
@@ -250,22 +240,21 @@ class SensorDetailHandler(BaseAPIHandler):
             # Diffuser la mise à jour en temps réel via WebSocket
             if "value" in changes or "is_active" in changes:
                 RealtimeHandler.broadcast_sensor_update(
-                    sensor.id,
-                    sensor.value,
-                    sensor.is_active,
-                    sensor.house_id
+                    sensor.id, sensor.value, sensor.is_active, sensor.house_id
                 )
 
-            self.write_json({
-                "id": sensor.id,
-                "room_id": sensor.room_id,
-                "name": sensor.name,
-                "type": sensor.type,
-                "value": sensor.value,
-                "unit": sensor.unit,
-                "is_active": sensor.is_active,
-                "last_update": sensor.last_update.isoformat()
-            })
+            self.write_json(
+                {
+                    "id": sensor.id,
+                    "room_id": sensor.room_id,
+                    "name": sensor.name,
+                    "type": sensor.type,
+                    "value": sensor.value,
+                    "unit": sensor.unit,
+                    "is_active": sensor.is_active,
+                    "last_update": sensor.last_update.isoformat(),
+                }
+            )
 
     async def delete(self, sensor_id):
         """Supprimer un capteur"""
@@ -285,19 +274,16 @@ class SensorDetailHandler(BaseAPIHandler):
             event = EventHistory(
                 house_id=sensor.house_id,
                 user_id=user_id,
-                event_type='sensor_reading',
-                entity_type='sensor',
+                event_type="sensor_reading",
+                entity_type="sensor",
                 entity_id=sensor.id,
-                description=(
-                    f"Capteur retiré: {sensor.name} "
-                    f"({sensor.type})"
-                ),
+                description=(f"Capteur retiré: {sensor.name} " f"({sensor.type})"),
                 event_metadata={
                     "action": "delete",
                     "sensor_type": sensor.type,
-                    "final_value": sensor.value
+                    "final_value": sensor.value,
                 },
-                ip_address=self.request.remote_ip
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
 
@@ -339,13 +325,12 @@ class SensorValueHandler(BaseAPIHandler):
             # Enregistrer dans l'historique (si changement significatif)
             if old_value != data["value"]:
                 user_id_cookie = self.get_secure_cookie("uid")
-                user_id = int(user_id_cookie.decode()) \
-                    if user_id_cookie else None
+                user_id = int(user_id_cookie.decode()) if user_id_cookie else None
                 event = EventHistory(
                     house_id=sensor.house_id,
                     user_id=user_id,
-                    event_type='sensor_reading',
-                    entity_type='sensor',
+                    event_type="sensor_reading",
+                    entity_type="sensor",
                     entity_id=sensor.id,
                     description=(
                         f"Capteur {sensor.name}: "
@@ -355,9 +340,9 @@ class SensorValueHandler(BaseAPIHandler):
                         "action": "value_update",
                         "sensor_type": sensor.type,
                         "old_value": old_value,
-                        "new_value": data["value"]
+                        "new_value": data["value"],
                     },
-                    ip_address=self.request.remote_ip
+                    ip_address=self.request.remote_ip,
                 )
                 session.add(event)
 
@@ -365,16 +350,15 @@ class SensorValueHandler(BaseAPIHandler):
 
             # Diffuser la mise à jour en temps réel via WebSocket
             RealtimeHandler.broadcast_sensor_update(
-                sensor.id,
-                sensor.value,
-                sensor.is_active,
-                sensor.house_id
+                sensor.id, sensor.value, sensor.is_active, sensor.house_id
             )
 
-            self.write_json({
-                "id": sensor.id,
-                "type": sensor.type,
-                "value": sensor.value,
-                "unit": sensor.unit,
-                "last_update": sensor.last_update.isoformat()
-            })
+            self.write_json(
+                {
+                    "id": sensor.id,
+                    "type": sensor.type,
+                    "value": sensor.value,
+                    "unit": sensor.unit,
+                    "last_update": sensor.last_update.isoformat(),
+                }
+            )

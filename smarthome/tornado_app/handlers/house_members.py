@@ -1,4 +1,5 @@
 """House Members API handlers."""
+
 import tornado.web
 import json
 from datetime import datetime
@@ -19,10 +20,10 @@ class BaseAPIHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
         self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Methods",
-                        "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-        self.set_header("Access-Control-Allow-Headers",
-                        "Content-Type, Authorization")
+        self.set_header(
+            "Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        )
+        self.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
     def options(self, *args):
         self.set_status(204)
@@ -35,7 +36,7 @@ class BaseAPIHandler(tornado.web.RequestHandler):
         username = self.get_secure_cookie("uname")
         return {
             "id": int(user_id.decode()),
-            "username": username.decode() if username else None
+            "username": username.decode() if username else None,
         }
 
 
@@ -67,7 +68,7 @@ class HouseMembersHandler(BaseAPIHandler):
                 and_(
                     HouseMember.house_id == house_id,
                     HouseMember.user_id == user_id,
-                    HouseMember.status == 'accepted'
+                    HouseMember.status == "accepted",
                 )
             )
             member_result = await session.execute(member_query)
@@ -79,12 +80,14 @@ class HouseMembersHandler(BaseAPIHandler):
                 return
 
             # Retrieve all members
-            query = select(HouseMember).where(
-                HouseMember.house_id == house_id
-            ).options(
-                selectinload(HouseMember.user),
-                selectinload(HouseMember.inviter)
-            ).order_by(HouseMember.invited_at.desc())
+            query = (
+                select(HouseMember)
+                .where(HouseMember.house_id == house_id)
+                .options(
+                    selectinload(HouseMember.user), selectinload(HouseMember.inviter)
+                )
+                .order_by(HouseMember.invited_at.desc())
+            )
 
             result = await session.execute(query)
             members = result.scalars().all()
@@ -99,11 +102,13 @@ class HouseMembersHandler(BaseAPIHandler):
                     "role": member.role,
                     "status": member.status,
                     "invited_at": member.invited_at.isoformat(),
-                    "accepted_at": member.accepted_at.isoformat()
-                    if member.accepted_at else None,
+                    "accepted_at": (
+                        member.accepted_at.isoformat() if member.accepted_at else None
+                    ),
                     "invited_by": member.invited_by,
-                    "inviter_username": member.inviter.username
-                    if member.inviter else None,
+                    "inviter_username": (
+                        member.inviter.username if member.inviter else None
+                    ),
                 }
                 members_data.append(member_info)
 
@@ -150,23 +155,21 @@ class HouseMembersHandler(BaseAPIHandler):
                         and_(
                             HouseMember.house_id == house_id,
                             HouseMember.user_id == user_id,
-                            HouseMember.role == 'administrateur',
-                            HouseMember.status == 'accepted'
+                            HouseMember.role == "administrateur",
+                            HouseMember.status == "accepted",
                         )
                     )
                     member_result = await session.execute(member_query)
                     is_admin = member_result.scalar_one_or_none() is not None
                     if not is_admin:
                         self.set_status(403)
-                        self.write({
-                            "error": "Only owners and administrators can invite"
-                        })
+                        self.write(
+                            {"error": "Only owners and administrators can invite"}
+                        )
                         return
 
                 # Find the user to invite by username
-                user_query = select(User).where(
-                    User.username == invited_username
-                )
+                user_query = select(User).where(User.username == invited_username)
                 user_result = await session.execute(user_query)
                 invited_user = user_result.scalar_one_or_none()
 
@@ -174,30 +177,31 @@ class HouseMembersHandler(BaseAPIHandler):
                     self.set_status(404)
                     self.write({"error": "User not found"})
                     return
-                
+
                 # Empêcher de s'inviter soi-même
                 if invited_user.id == user_id:
                     self.set_status(400)
-                    self.write({"error": "Vous ne pouvez pas vous "
-                               "inviter vous-même"})
+                    self.write(
+                        {"error": "Vous ne pouvez pas vous " "inviter vous-même"}
+                    )
                     return
 
                 # Check if already member or invited
                 existing_query = select(HouseMember).where(
                     and_(
                         HouseMember.house_id == house_id,
-                        HouseMember.user_id == invited_user.id
+                        HouseMember.user_id == invited_user.id,
                     )
                 )
                 existing_result = await session.execute(existing_query)
                 existing = existing_result.scalar_one_or_none()
 
                 if existing:
-                    if existing.status == 'accepted':
+                    if existing.status == "accepted":
                         self.set_status(400)
                         self.write({"error": "User already a member"})
                         return
-                    elif existing.status == 'pending':
+                    elif existing.status == "pending":
                         self.set_status(400)
                         self.write({"error": "Invitation already sent"})
                         return
@@ -208,7 +212,7 @@ class HouseMembersHandler(BaseAPIHandler):
                     user_id=invited_user.id,
                     role=role,
                     invited_by=user_id,
-                    status='pending'
+                    status="pending",
                 )
                 session.add(new_member)
 
@@ -216,17 +220,17 @@ class HouseMembersHandler(BaseAPIHandler):
                 event = EventHistory(
                     house_id=house_id,
                     user_id=user_id,
-                    event_type='member_action',
-                    entity_type='member',
+                    event_type="member_action",
+                    entity_type="member",
                     entity_id=invited_user.id,
                     description=f"Invitation envoyée à {invited_user.username}"
                     f" avec le rôle {role}",
                     event_metadata={
                         "action": "invite",
                         "invited_user_id": invited_user.id,
-                        "role": role
+                        "role": role,
                     },
-                    ip_address=self.request.remote_ip
+                    ip_address=self.request.remote_ip,
                 )
                 session.add(event)
 
@@ -234,16 +238,18 @@ class HouseMembersHandler(BaseAPIHandler):
                 await session.refresh(new_member)
 
                 self.set_status(201)
-                self.write({
-                    "message": "Invitation sent",
-                    "member": {
-                        "id": new_member.id,
-                        "user_id": new_member.user_id,
-                        "username": invited_user.username,
-                        "role": new_member.role,
-                        "status": new_member.status
+                self.write(
+                    {
+                        "message": "Invitation sent",
+                        "member": {
+                            "id": new_member.id,
+                            "user_id": new_member.user_id,
+                            "username": invited_user.username,
+                            "role": new_member.role,
+                            "status": new_member.status,
+                        },
                     }
-                })
+                )
 
         except json.JSONDecodeError:
             self.set_status(400)
@@ -285,38 +291,37 @@ class HouseMemberDetailHandler(BaseAPIHandler):
 
                 # Case 1: Accept/reject an invitation (invited user)
                 if new_status and member.user_id == user_id:
-                    if new_status not in ['accepted', 'rejected']:
+                    if new_status not in ["accepted", "rejected"]:
                         self.set_status(400)
                         self.write({"error": "Invalid status"})
                         return
 
                     old_status = member.status
                     member.status = new_status
-                    if new_status == 'accepted':
+                    if new_status == "accepted":
                         member.accepted_at = datetime.utcnow()
 
                     # Historique
                     event = EventHistory(
                         house_id=house_id,
                         user_id=user_id,
-                        event_type='member_action',
-                        entity_type='member',
+                        event_type="member_action",
+                        entity_type="member",
                         entity_id=member.id,
                         description=f"Invitation {new_status}",
                         event_metadata={
                             "action": "invitation_response",
                             "old_status": old_status,
-                            "new_status": new_status
+                            "new_status": new_status,
                         },
-                        ip_address=self.request.remote_ip
+                        ip_address=self.request.remote_ip,
                     )
                     session.add(event)
                     await session.commit()
 
-                    self.write({
-                        "message": f"Invitation {new_status}",
-                        "status": member.status
-                    })
+                    self.write(
+                        {"message": f"Invitation {new_status}", "status": member.status}
+                    )
                     return
 
                 # Case 2: Change role (admin or owner only)
@@ -333,18 +338,15 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                             and_(
                                 HouseMember.house_id == house_id,
                                 HouseMember.user_id == user_id,
-                                HouseMember.role == 'administrateur',
-                                HouseMember.status == 'accepted'
+                                HouseMember.role == "administrateur",
+                                HouseMember.status == "accepted",
                             )
                         )
                         admin_result = await session.execute(admin_query)
-                        is_admin = admin_result.scalar_one_or_none() \
-                            is not None
+                        is_admin = admin_result.scalar_one_or_none() is not None
                         if not is_admin:
                             self.set_status(403)
-                            self.write({
-                                "error": "Permission denied"
-                            })
+                            self.write({"error": "Permission denied"})
                             return
 
                     old_role = member.role
@@ -354,26 +356,22 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                     event = EventHistory(
                         house_id=house_id,
                         user_id=user_id,
-                        event_type='member_action',
-                        entity_type='member',
+                        event_type="member_action",
+                        entity_type="member",
                         entity_id=member.id,
-                        description=f"Rôle modifié de {old_role} "
-                        f"à {new_role}",
+                        description=f"Rôle modifié de {old_role} " f"à {new_role}",
                         event_metadata={
                             "action": "role_change",
                             "old_role": old_role,
                             "new_role": new_role,
-                            "target_user_id": member.user_id
+                            "target_user_id": member.user_id,
                         },
-                        ip_address=self.request.remote_ip
+                        ip_address=self.request.remote_ip,
                     )
                     session.add(event)
                     await session.commit()
 
-                    self.write({
-                        "message": "Role updated",
-                        "role": member.role
-                    })
+                    self.write({"message": "Role updated", "role": member.role})
                     return
 
                 self.set_status(400)
@@ -414,9 +412,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                 # Empêcher le propriétaire de se retirer
                 if house.user_id == user_id:
                     self.set_status(403)
-                    self.write({
-                        "error": "Owner cannot remove themselves"
-                    })
+                    self.write({"error": "Owner cannot remove themselves"})
                     return
             # Case 2: Admin or owner removes someone
             else:
@@ -426,8 +422,8 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                         and_(
                             HouseMember.house_id == house_id,
                             HouseMember.user_id == user_id,
-                            HouseMember.role == 'administrateur',
-                            HouseMember.status == 'accepted'
+                            HouseMember.role == "administrateur",
+                            HouseMember.status == "accepted",
                         )
                     )
                     admin_result = await session.execute(admin_query)
@@ -442,21 +438,21 @@ class HouseMemberDetailHandler(BaseAPIHandler):
             user_result = await session.execute(user_query)
             target_user = user_result.scalar_one_or_none()
 
-            username = target_user.username if target_user else 'Inconnu'
+            username = target_user.username if target_user else "Inconnu"
             event = EventHistory(
                 house_id=house_id,
                 user_id=user_id,
-                event_type='member_action',
-                entity_type='member',
+                event_type="member_action",
+                entity_type="member",
                 entity_id=member.user_id,
                 description=f"Membre {username} retiré",
                 event_metadata={
                     "action": "remove",
                     "removed_user_id": member.user_id,
                     "was_role": member.role,
-                    "self_removal": member.user_id == user_id
+                    "self_removal": member.user_id == user_id,
                 },
-                ip_address=self.request.remote_ip
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
 
@@ -480,15 +476,18 @@ class MyInvitationsHandler(BaseAPIHandler):
         user_id = current_user["id"]
 
         async with async_session_maker() as session:
-            query = select(HouseMember).where(
-                and_(
-                    HouseMember.user_id == user_id,
-                    HouseMember.status == 'pending'
+            query = (
+                select(HouseMember)
+                .where(
+                    and_(
+                        HouseMember.user_id == user_id, HouseMember.status == "pending"
+                    )
                 )
-            ).options(
-                selectinload(HouseMember.house),
-                selectinload(HouseMember.inviter)
-            ).order_by(HouseMember.invited_at.desc())
+                .options(
+                    selectinload(HouseMember.house), selectinload(HouseMember.inviter)
+                )
+                .order_by(HouseMember.invited_at.desc())
+            )
 
             result = await session.execute(query)
             invitations = result.scalars().all()
@@ -498,13 +497,13 @@ class MyInvitationsHandler(BaseAPIHandler):
                 inv_info = {
                     "id": invitation.id,
                     "house_id": invitation.house_id,
-                    "house_name": invitation.house.name
-                    if invitation.house else None,
+                    "house_name": invitation.house.name if invitation.house else None,
                     "role": invitation.role,
                     "invited_by": invitation.invited_by,
-                    "inviter_username": invitation.inviter.username
-                    if invitation.inviter else None,
-                    "invited_at": invitation.invited_at.isoformat()
+                    "inviter_username": (
+                        invitation.inviter.username if invitation.inviter else None
+                    ),
+                    "invited_at": invitation.invited_at.isoformat(),
                 }
                 invitations_data.append(inv_info)
 
@@ -539,9 +538,9 @@ class SearchUsersHandler(BaseAPIHandler):
         async with async_session_maker() as session:
             # Rechercher les utilisateurs dont le username contient
             # le terme (insensible à la casse)
-            query = select(User).where(
-                User.username.ilike(f"%{search_term}%")
-            ).limit(limit)
+            query = (
+                select(User).where(User.username.ilike(f"%{search_term}%")).limit(limit)
+            )
 
             result = await session.execute(query)
             users = result.scalars().all()
@@ -550,11 +549,13 @@ class SearchUsersHandler(BaseAPIHandler):
             for user in users:
                 # Ne pas inclure l'utilisateur lui-même
                 if user.id != current_user["id"]:
-                    users_data.append({
-                        "id": user.id,
-                        "username": user.username,
-                        "profile_image": user.profile_image
-                    })
+                    users_data.append(
+                        {
+                            "id": user.id,
+                            "username": user.username,
+                            "profile_image": user.profile_image,
+                        }
+                    )
 
             self.write({"users": users_data})
 
@@ -587,11 +588,12 @@ class SearchHousesHandler(BaseAPIHandler):
 
         async with async_session_maker() as session:
             # Rechercher les maisons dont le nom contient le terme
-            query = select(House).where(
-                House.name.ilike(f"%{search_term}%")
-            ).options(
-                selectinload(House.user)
-            ).limit(limit)
+            query = (
+                select(House)
+                .where(House.name.ilike(f"%{search_term}%"))
+                .options(selectinload(House.user))
+                .limit(limit)
+            )
 
             result = await session.execute(query)
             houses = result.scalars().all()
@@ -601,8 +603,7 @@ class SearchHousesHandler(BaseAPIHandler):
                 # Check if l'utilisateur a déjà une relation avec cette maison
                 member_query = select(HouseMember).where(
                     and_(
-                        HouseMember.house_id == house.id,
-                        HouseMember.user_id == user_id
+                        HouseMember.house_id == house.id, HouseMember.user_id == user_id
                     )
                 )
                 member_result = await session.execute(member_query)
@@ -615,13 +616,15 @@ class SearchHousesHandler(BaseAPIHandler):
                 elif existing_member:
                     relationship_status = existing_member.status
 
-                houses_data.append({
-                    "id": house.id,
-                    "name": house.name,
-                    "owner_id": house.user_id,
-                    "owner_username": house.user.username if house.user else None,
-                    "relationship_status": relationship_status
-                })
+                houses_data.append(
+                    {
+                        "id": house.id,
+                        "name": house.name,
+                        "owner_id": house.user_id,
+                        "owner_username": house.user.username if house.user else None,
+                        "relationship_status": relationship_status,
+                    }
+                )
 
             self.write({"houses": houses_data})
 
@@ -661,25 +664,24 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                 # Check if déjà membre ou demande existante
                 existing_query = select(HouseMember).where(
                     and_(
-                        HouseMember.house_id == house_id,
-                        HouseMember.user_id == user_id
+                        HouseMember.house_id == house_id, HouseMember.user_id == user_id
                     )
                 )
                 existing_result = await session.execute(existing_query)
                 existing = existing_result.scalar_one_or_none()
 
                 if existing:
-                    if existing.status == 'accepted':
+                    if existing.status == "accepted":
                         self.set_status(400)
                         self.write({"error": "You are already a member of this house"})
                         return
-                    elif existing.status == 'pending':
+                    elif existing.status == "pending":
                         self.set_status(400)
                         self.write({"error": "Request already pending"})
                         return
-                    elif existing.status == 'rejected':
+                    elif existing.status == "rejected":
                         # Réinitialiser la demande
-                        existing.status = 'pending'
+                        existing.status = "pending"
                         existing.invited_at = datetime.utcnow()
                         existing.accepted_at = None
 
@@ -687,34 +689,36 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                         event = EventHistory(
                             house_id=house_id,
                             user_id=user_id,
-                            event_type='member_action',
-                            entity_type='member',
+                            event_type="member_action",
+                            entity_type="member",
                             entity_id=user_id,
                             description=f"{current_user['username']} re-requested access",
                             event_metadata={
                                 "action": "access_request",
                                 "message": message,
-                                "is_renewal": True
+                                "is_renewal": True,
                             },
-                            ip_address=self.request.remote_ip
+                            ip_address=self.request.remote_ip,
                         )
                         session.add(event)
                         await session.commit()
 
                         self.set_status(201)
-                        self.write({
-                            "message": "Access request renewed",
-                            "request_id": existing.id
-                        })
+                        self.write(
+                            {
+                                "message": "Access request renewed",
+                                "request_id": existing.id,
+                            }
+                        )
                         return
 
                 # Create la demande d'accès (sans invited_by car auto-demande)
                 new_request = HouseMember(
                     house_id=house_id,
                     user_id=user_id,
-                    role='occupant',  # Par défaut occupant
+                    role="occupant",  # Par défaut occupant
                     invited_by=None,  # Aucun inviteur (auto-demande)
-                    status='pending'
+                    status="pending",
                 )
                 session.add(new_request)
 
@@ -722,15 +726,12 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                 event = EventHistory(
                     house_id=house_id,
                     user_id=user_id,
-                    event_type='member_action',
-                    entity_type='member',
+                    event_type="member_action",
+                    entity_type="member",
                     entity_id=user_id,
                     description=f"{current_user['username']} requested access",
-                    event_metadata={
-                        "action": "access_request",
-                        "message": message
-                    },
-                    ip_address=self.request.remote_ip
+                    event_metadata={"action": "access_request", "message": message},
+                    ip_address=self.request.remote_ip,
                 )
                 session.add(event)
 
@@ -738,10 +739,9 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                 await session.refresh(new_request)
 
                 self.set_status(201)
-                self.write({
-                    "message": "Access request sent",
-                    "request_id": new_request.id
-                })
+                self.write(
+                    {"message": "Access request sent", "request_id": new_request.id}
+                )
 
         except json.JSONDecodeError:
             self.set_status(400)

@@ -7,7 +7,6 @@ from datetime import datetime
 from .base import BaseAPIHandler
 
 
-
 class EquipmentsListHandler(BaseAPIHandler):
     """GET /api/equipments - List all equipments
     POST /api/equipments - Create an equipment"""
@@ -43,8 +42,7 @@ class EquipmentsListHandler(BaseAPIHandler):
                     "state": e.state,
                     "is_active": e.is_active,
                     "allowed_roles": e.allowed_roles,
-                    "last_update": e.last_update.isoformat()
-                    if e.last_update else None
+                    "last_update": e.last_update.isoformat() if e.last_update else None,
                 }
                 for e in equipments
             ]
@@ -61,15 +59,13 @@ class EquipmentsListHandler(BaseAPIHandler):
 
         required = ["house_id", "name", "type"]
         if not all(k in data for k in required):
-            self.write_error_json(
-                f"Missing required fields: {', '.join(required)}")
+            self.write_error_json(f"Missing required fields: {', '.join(required)}")
             return
 
         # Validate equipment type
         valid_types = ["shutter", "door", "light", "sound_system"]
         if data["type"] not in valid_types:
-            self.write_error_json(
-                f"Invalid equipment type. Must be: {valid_types}")
+            self.write_error_json(f"Invalid equipment type. Must be: {valid_types}")
             return
 
         async with async_session_maker() as session:
@@ -80,7 +76,7 @@ class EquipmentsListHandler(BaseAPIHandler):
                 type=data["type"],
                 state=data.get("state", "off"),
                 is_active=data.get("is_active", True),
-                allowed_roles=data.get("allowed_roles")
+                allowed_roles=data.get("allowed_roles"),
             )
             session.add(new_equipment)
             await session.commit()
@@ -92,8 +88,8 @@ class EquipmentsListHandler(BaseAPIHandler):
             event = EventHistory(
                 house_id=new_equipment.house_id,
                 user_id=user_id,
-                event_type='equipment_control',
-                entity_type='equipment',
+                event_type="equipment_control",
+                entity_type="equipment",
                 entity_id=new_equipment.id,
                 description=(
                     f"Nouvel équipement ajouté: {new_equipment.name} "
@@ -102,23 +98,26 @@ class EquipmentsListHandler(BaseAPIHandler):
                 event_metadata={
                     "action": "create",
                     "equipment_type": new_equipment.type,
-                    "initial_state": new_equipment.state
+                    "initial_state": new_equipment.state,
                 },
-                ip_address=self.request.remote_ip
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
             await session.commit()
 
-            self.write_json({
-                "id": new_equipment.id,
-                "house_id": new_equipment.house_id,
-                "room_id": new_equipment.room_id,
-                "name": new_equipment.name,
-                "type": new_equipment.type,
-                "state": new_equipment.state,
-                "is_active": new_equipment.is_active,
-                "allowed_roles": new_equipment.allowed_roles
-            }, status=201)
+            self.write_json(
+                {
+                    "id": new_equipment.id,
+                    "house_id": new_equipment.house_id,
+                    "room_id": new_equipment.room_id,
+                    "name": new_equipment.name,
+                    "type": new_equipment.type,
+                    "state": new_equipment.state,
+                    "is_active": new_equipment.is_active,
+                    "allowed_roles": new_equipment.allowed_roles,
+                },
+                status=201,
+            )
 
 
 class EquipmentDetailHandler(BaseAPIHandler):
@@ -138,17 +137,22 @@ class EquipmentDetailHandler(BaseAPIHandler):
                 self.write_error_json("Equipment not found", 404)
                 return
 
-            self.write_json({
-                "id": equipment.id,
-                "room_id": equipment.room_id,
-                "name": equipment.name,
-                "type": equipment.type,
-                "state": equipment.state,
-                "is_active": equipment.is_active,
-                "allowed_roles": equipment.allowed_roles,
-                "last_update": equipment.last_update.isoformat()
-                if equipment.last_update else None
-            })
+            self.write_json(
+                {
+                    "id": equipment.id,
+                    "room_id": equipment.room_id,
+                    "name": equipment.name,
+                    "type": equipment.type,
+                    "state": equipment.state,
+                    "is_active": equipment.is_active,
+                    "allowed_roles": equipment.allowed_roles,
+                    "last_update": (
+                        equipment.last_update.isoformat()
+                        if equipment.last_update
+                        else None
+                    ),
+                }
+            )
 
     async def put(self, equipment_id):
         """Mettre à jour un équipement"""
@@ -158,7 +162,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
             self.write_error_json("Not authenticated", 401)
             return
         user_id = int(user_id_cookie.decode())
-        
+
         try:
             data = json.loads(self.request.body)
         except json.JSONDecodeError:
@@ -167,7 +171,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
 
         async with async_session_maker() as session:
             from ..utils.permissions import can_control_equipment
-            
+
             result = await session.execute(
                 select(Equipment).where(Equipment.id == int(equipment_id))
             )
@@ -189,27 +193,21 @@ class EquipmentDetailHandler(BaseAPIHandler):
 
             # Mise à jour des champs
             if "name" in data:
-                changes["name"] = {
-                    "old": equipment.name,
-                    "new": data["name"]
-                }
+                changes["name"] = {"old": equipment.name, "new": data["name"]}
                 equipment.name = data["name"]
             if "state" in data:
-                changes["state"] = {
-                    "old": equipment.state,
-                    "new": data["state"]
-                }
+                changes["state"] = {"old": equipment.state, "new": data["state"]}
                 equipment.state = data["state"]
             if "is_active" in data:
                 changes["is_active"] = {
                     "old": equipment.is_active,
-                    "new": data["is_active"]
+                    "new": data["is_active"],
                 }
                 equipment.is_active = data["is_active"]
             if "allowed_roles" in data:
                 changes["allowed_roles"] = {
                     "old": equipment.allowed_roles,
-                    "new": data["allowed_roles"]
+                    "new": data["allowed_roles"],
                 }
                 equipment.allowed_roles = data["allowed_roles"]
 
@@ -219,32 +217,32 @@ class EquipmentDetailHandler(BaseAPIHandler):
             if changes:
                 description_parts = []
                 if "state" in changes:
-                    old_s = changes['state']['old']
-                    new_s = changes['state']['new']
+                    old_s = changes["state"]["old"]
+                    new_s = changes["state"]["new"]
                     description_parts.append(f"État: {old_s} → {new_s}")
                 if "is_active" in changes:
-                    old_a = changes['is_active']['old']
-                    new_a = changes['is_active']['new']
+                    old_a = changes["is_active"]["old"]
+                    new_a = changes["is_active"]["new"]
                     description_parts.append(f"Actif: {old_a} → {new_a}")
                 if "name" in changes:
                     description_parts.append("Nom modifié")
-                
+
                 desc = f"Équipement {equipment.name} modifié: "
-                desc += ', '.join(description_parts)
-                
+                desc += ", ".join(description_parts)
+
                 event = EventHistory(
                     house_id=equipment.house_id,
                     user_id=user_id,
-                    event_type='equipment_control',
-                    entity_type='equipment',
+                    event_type="equipment_control",
+                    entity_type="equipment",
                     entity_id=equipment.id,
                     description=desc,
                     event_metadata={
                         "action": "update",
                         "changes": changes,
-                        "equipment_type": equipment.type
+                        "equipment_type": equipment.type,
                     },
-                    ip_address=self.request.remote_ip
+                    ip_address=self.request.remote_ip,
                 )
                 session.add(event)
 
@@ -256,6 +254,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
                 f"state={equipment.state}, type={equipment.type}"
             )
             from .websocket import RealtimeHandler
+
             client_count = len(RealtimeHandler.clients)
             print(f"[Equipment] Clients WebSocket connectés: {client_count}")
             RealtimeHandler.broadcast_equipment_update(
@@ -263,22 +262,21 @@ class EquipmentDetailHandler(BaseAPIHandler):
                 equipment.type,
                 equipment.state,
                 equipment.is_active,
-                equipment.house_id
+                equipment.house_id,
             )
-            print(
-                f"[Equipment] Broadcast envoyé pour "
-                f"équipement ID={equipment.id}"
-            )
+            print(f"[Equipment] Broadcast envoyé pour " f"équipement ID={equipment.id}")
 
-            self.write_json({
-                "id": equipment.id,
-                "room_id": equipment.room_id,
-                "name": equipment.name,
-                "type": equipment.type,
-                "state": equipment.state,
-                "is_active": equipment.is_active,
-                "last_update": equipment.last_update.isoformat()
-            })
+            self.write_json(
+                {
+                    "id": equipment.id,
+                    "room_id": equipment.room_id,
+                    "name": equipment.name,
+                    "type": equipment.type,
+                    "state": equipment.state,
+                    "is_active": equipment.is_active,
+                    "last_update": equipment.last_update.isoformat(),
+                }
+            )
 
     async def delete(self, equipment_id):
         """Supprimer un équipement"""
@@ -298,19 +296,18 @@ class EquipmentDetailHandler(BaseAPIHandler):
             event = EventHistory(
                 house_id=equipment.house_id,
                 user_id=user_id,
-                event_type='equipment_control',
-                entity_type='equipment',
+                event_type="equipment_control",
+                entity_type="equipment",
                 entity_id=equipment.id,
                 description=(
-                    f"Équipement retiré: {equipment.name} "
-                    f"({equipment.type})"
+                    f"Équipement retiré: {equipment.name} " f"({equipment.type})"
                 ),
                 event_metadata={
                     "action": "delete",
                     "equipment_type": equipment.type,
-                    "final_state": equipment.state
+                    "final_state": equipment.state,
                 },
-                ip_address=self.request.remote_ip
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
 
@@ -321,6 +318,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
 
 
 # Handlers spécialisés par type d'équipement
+
 
 class ShuttersHandler(BaseAPIHandler):
     """GET/PUT /api/volets - Contrôle des volets roulants"""
@@ -333,18 +331,20 @@ class ShuttersHandler(BaseAPIHandler):
             )
             shutters = result.scalars().all()
 
-            self.write_json({
-                "volets": [
-                    {
-                        "id": s.id,
-                        "room_id": s.room_id,
-                        "name": s.name,
-                        "state": s.state,
-                        "is_active": s.is_active
-                    }
-                    for s in shutters
-                ]
-            })
+            self.write_json(
+                {
+                    "volets": [
+                        {
+                            "id": s.id,
+                            "room_id": s.room_id,
+                            "name": s.name,
+                            "state": s.state,
+                            "is_active": s.is_active,
+                        }
+                        for s in shutters
+                    ]
+                }
+            )
 
     async def put(self):
         """Contrôler tous les volets (ouverture/fermeture globale)"""
@@ -370,10 +370,12 @@ class ShuttersHandler(BaseAPIHandler):
 
             await session.commit()
 
-            self.write_json({
-                "message": f"All shutters set to {data['state']}",
-                "count": len(shutters)
-            })
+            self.write_json(
+                {
+                    "message": f"All shutters set to {data['state']}",
+                    "count": len(shutters),
+                }
+            )
 
 
 class DoorsHandler(BaseAPIHandler):
@@ -387,18 +389,20 @@ class DoorsHandler(BaseAPIHandler):
             )
             doors = result.scalars().all()
 
-            self.write_json({
-                "portes": [
-                    {
-                        "id": d.id,
-                        "room_id": d.room_id,
-                        "name": d.name,
-                        "state": d.state,
-                        "is_active": d.is_active
-                    }
-                    for d in doors
-                ]
-            })
+            self.write_json(
+                {
+                    "portes": [
+                        {
+                            "id": d.id,
+                            "room_id": d.room_id,
+                            "name": d.name,
+                            "state": d.state,
+                            "is_active": d.is_active,
+                        }
+                        for d in doors
+                    ]
+                }
+            )
 
     async def put(self):
         """Contrôler toutes les portes"""
@@ -424,10 +428,9 @@ class DoorsHandler(BaseAPIHandler):
 
             await session.commit()
 
-            self.write_json({
-                "message": f"All doors set to {data['state']}",
-                "count": len(doors)
-            })
+            self.write_json(
+                {"message": f"All doors set to {data['state']}", "count": len(doors)}
+            )
 
 
 class LightsHandler(BaseAPIHandler):
@@ -441,18 +444,20 @@ class LightsHandler(BaseAPIHandler):
             )
             lights = result.scalars().all()
 
-            self.write_json({
-                "lumieres": [
-                    {
-                        "id": light.id,
-                        "room_id": light.room_id,
-                        "name": light.name,
-                        "state": light.state,
-                        "is_active": light.is_active
-                    }
-                    for light in lights
-                ]
-            })
+            self.write_json(
+                {
+                    "lumieres": [
+                        {
+                            "id": light.id,
+                            "room_id": light.room_id,
+                            "name": light.name,
+                            "state": light.state,
+                            "is_active": light.is_active,
+                        }
+                        for light in lights
+                    ]
+                }
+            )
 
     async def put(self):
         """Contrôler toutes les lumières"""
@@ -478,10 +483,9 @@ class LightsHandler(BaseAPIHandler):
 
             await session.commit()
 
-            self.write_json({
-                "message": f"All lights set to {data['state']}",
-                "count": len(lights)
-            })
+            self.write_json(
+                {"message": f"All lights set to {data['state']}", "count": len(lights)}
+            )
 
 
 class SoundSystemHandler(BaseAPIHandler):
@@ -495,18 +499,20 @@ class SoundSystemHandler(BaseAPIHandler):
             )
             sound_systems = result.scalars().all()
 
-            self.write_json({
-                "sono": [
-                    {
-                        "id": s.id,
-                        "room_id": s.room_id,
-                        "name": s.name,
-                        "state": s.state,
-                        "is_active": s.is_active
-                    }
-                    for s in sound_systems
-                ]
-            })
+            self.write_json(
+                {
+                    "sono": [
+                        {
+                            "id": s.id,
+                            "room_id": s.room_id,
+                            "name": s.name,
+                            "state": s.state,
+                            "is_active": s.is_active,
+                        }
+                        for s in sound_systems
+                    ]
+                }
+            )
 
     async def put(self):
         """Contrôler tous les systèmes sonores"""
@@ -532,7 +538,9 @@ class SoundSystemHandler(BaseAPIHandler):
 
             await session.commit()
 
-            self.write_json({
-                "message": f"All sound systems set to {data['state']}",
-                "count": len(sound_systems)
-            })
+            self.write_json(
+                {
+                    "message": f"All sound systems set to {data['state']}",
+                    "count": len(sound_systems),
+                }
+            )

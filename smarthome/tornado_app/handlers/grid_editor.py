@@ -7,17 +7,17 @@ from ..models import House, Room
 
 class EditHouseInsideHandler(tornado.web.RequestHandler):
     """Handler pour l'éditeur de grille d'intérieur"""
-    
+
     def get_current_user(self):
         uid = self.get_secure_cookie("uid")
         return int(uid) if uid else None
-    
+
     async def get(self, house_id):
         user_id = self.get_current_user()
         if not user_id:
             self.redirect("/app/login.html")
             return
-        
+
         async with async_session_maker() as session:
             result = await session.execute(
                 select(House)
@@ -25,35 +25,36 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
                 .where(House.id == int(house_id), House.user_id == user_id)
             )
             house = result.scalar_one_or_none()
-            
+
             if not house:
                 self.set_status(404)
                 self.write("<h1>404 - Maison introuvable</h1>")
                 return
-            
+
             self.render("edit_house_inside.html", house=house, error=None)
-    
+
     async def post(self, house_id):
         user_id = self.get_current_user()
         if not user_id:
             self.redirect("/app/login.html")
             return
-        
+
         grid_data = self.get_argument("grid", "[]")
-        
+
         async with async_session_maker() as session:
             result = await session.execute(
                 select(House).where(House.id == int(house_id), House.user_id == user_id)
             )
             house = result.scalar_one_or_none()
-            
+
             if not house:
                 self.set_status(404)
                 self.write("<h1>404 - Maison introuvable</h1>")
                 return
-            
+
             # Save grid to database
             import json
+
             try:
                 grid = json.loads(grid_data)
                 house.grid = grid
@@ -62,6 +63,6 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
                 self.set_status(400)
                 self.write("<h1>400 - Données de grille invalides</h1>")
                 return
-            
+
             # Redirect to house details page
             self.redirect(f"/app/house.html?id={house_id}")

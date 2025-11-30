@@ -1,6 +1,7 @@
 """
 REST API for house and room management.
 """
+
 import json
 import tornado.web
 from sqlalchemy import select
@@ -8,7 +9,6 @@ from sqlalchemy.orm import selectinload
 from ..models import House, Room, EventHistory
 from ..database import async_session_maker
 from .base import BaseAPIHandler
-
 
 
 class HousesAPIHandler(BaseAPIHandler):
@@ -25,7 +25,7 @@ class HousesAPIHandler(BaseAPIHandler):
         async with async_session_maker() as session:
             from sqlalchemy import and_
             from ..models import HouseMember
-            
+
             # Retrieve houses owned by the user
             owned_result = await session.execute(
                 select(House)
@@ -40,7 +40,7 @@ class HousesAPIHandler(BaseAPIHandler):
                 .where(
                     and_(
                         HouseMember.user_id == current_user["id"],
-                        HouseMember.status == 'accepted'
+                        HouseMember.status == "accepted",
                     )
                 )
                 .options(selectinload(HouseMember.house))
@@ -48,53 +48,46 @@ class HousesAPIHandler(BaseAPIHandler):
             memberships = member_result.scalars().all()
 
             houses_list = []
-            
+
             # Add owned houses
             for h in owned_houses:
-                houses_list.append({
-                    "id": h.id,
-                    "name": h.name,
-                    "address": h.address,
-                    "length": h.length,
-                    "width": h.width,
-                    "grid": h.grid,
-                    "role": "proprietaire",
-                    "is_owner": True,
-                    "rooms": [
-                        {
-                            "id": r.id,
-                            "name": r.name
-                        }
-                        for r in h.rooms
-                    ]
-                })
+                houses_list.append(
+                    {
+                        "id": h.id,
+                        "name": h.name,
+                        "address": h.address,
+                        "length": h.length,
+                        "width": h.width,
+                        "grid": h.grid,
+                        "role": "proprietaire",
+                        "is_owner": True,
+                        "rooms": [{"id": r.id, "name": r.name} for r in h.rooms],
+                    }
+                )
 
             # Add shared houses
             for membership in memberships:
                 if membership.house:
                     # Load rooms
-                    await session.refresh(membership.house, ['rooms'])
-                    houses_list.append({
-                        "id": membership.house.id,
-                        "name": membership.house.name,
-                        "address": membership.house.address,
-                        "length": membership.house.length,
-                        "width": membership.house.width,
-                        "grid": membership.house.grid,
-                        "role": membership.role,
-                        "is_owner": False,
-                        "rooms": [
-                            {
-                                "id": r.id,
-                                "name": r.name
-                            }
-                            for r in membership.house.rooms
-                        ]
-                    })
+                    await session.refresh(membership.house, ["rooms"])
+                    houses_list.append(
+                        {
+                            "id": membership.house.id,
+                            "name": membership.house.name,
+                            "address": membership.house.address,
+                            "length": membership.house.length,
+                            "width": membership.house.width,
+                            "grid": membership.house.grid,
+                            "role": membership.role,
+                            "is_owner": False,
+                            "rooms": [
+                                {"id": r.id, "name": r.name}
+                                for r in membership.house.rooms
+                            ],
+                        }
+                    )
 
-            self.write_json({
-                "houses": houses_list
-            })
+            self.write_json({"houses": houses_list})
 
     async def post(self):
         current_user = self.get_current_user()
@@ -133,20 +126,17 @@ class HousesAPIHandler(BaseAPIHandler):
                 row = []
                 for j in range(width + 2):
                     # Border = wall (1), interior = empty (0)
-                    is_border = (
-                        i == 0 or i == length + 1 or
-                        j == 0 or j == width + 1
-                    )
+                    is_border = i == 0 or i == length + 1 or j == 0 or j == width + 1
                     row.append(1 if is_border else 0)
                 grid.append(row)
-            
+
             new_house = House(
                 user_id=current_user["id"],
                 name=name,
                 address=address or "",
                 length=length,
                 width=width,
-                grid=grid  # Grid with wall borders
+                grid=grid,  # Grid with wall borders
             )
 
             session.add(new_house)
@@ -157,29 +147,32 @@ class HousesAPIHandler(BaseAPIHandler):
             event = EventHistory(
                 house_id=new_house.id,
                 user_id=current_user["id"],
-                event_type='house_modified',
-                entity_type='house',
+                event_type="house_modified",
+                entity_type="house",
                 entity_id=new_house.id,
                 description=f"Maison créée: {new_house.name}",
                 event_metadata={
                     "action": "create",
                     "dimensions": f"{length}x{width}",
-                    "address": address
+                    "address": address,
                 },
-                ip_address=self.request.remote_ip
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
             await session.commit()
 
-            self.write_json({
-                "id": new_house.id,
-                "name": new_house.name,
-                "address": new_house.address,
-                "length": new_house.length,
-                "width": new_house.width,
-                "grid": new_house.grid,
-                "message": "House created successfully"
-            }, 201)
+            self.write_json(
+                {
+                    "id": new_house.id,
+                    "name": new_house.name,
+                    "address": new_house.address,
+                    "length": new_house.length,
+                    "width": new_house.width,
+                    "grid": new_house.grid,
+                    "message": "House created successfully",
+                },
+                201,
+            )
 
 
 class HouseDetailAPIHandler(BaseAPIHandler):
@@ -195,18 +188,14 @@ class HouseDetailAPIHandler(BaseAPIHandler):
             return self.write_error_json("Not authenticated", 401)
 
         async with async_session_maker() as session:
-            from ..utils.permissions import (
-                can_view_house, get_user_role_in_house
-            )
-            
+            from ..utils.permissions import can_view_house, get_user_role_in_house
+
             house_id = int(house_id)
-            
+
             # Vérifier les permissions de visualisation
-            if not await can_view_house(
-                session, current_user["id"], house_id
-            ):
+            if not await can_view_house(session, current_user["id"], house_id):
                 return self.write_error_json("Access denied", 403)
-            
+
             result = await session.execute(
                 select(House)
                 .where(House.id == house_id)
@@ -222,23 +211,21 @@ class HouseDetailAPIHandler(BaseAPIHandler):
                 session, current_user["id"], house_id
             )
 
-            self.write_json({
-                "id": house.id,
-                "name": house.name,
-                "address": house.address,
-                "length": house.length,
-                "width": house.width,
-                "grid": house.grid,
-                "user_role": user_role,
-                "rooms": [
-                    {
-                        "id": r.id,
-                        "name": r.name,
-                        "house_id": r.house_id
-                    }
-                    for r in house.rooms
-                ]
-            })
+            self.write_json(
+                {
+                    "id": house.id,
+                    "name": house.name,
+                    "address": house.address,
+                    "length": house.length,
+                    "width": house.width,
+                    "grid": house.grid,
+                    "user_role": user_role,
+                    "rooms": [
+                        {"id": r.id, "name": r.name, "house_id": r.house_id}
+                        for r in house.rooms
+                    ],
+                }
+            )
 
     async def put(self, house_id):
         current_user = self.get_current_user()
@@ -252,18 +239,14 @@ class HouseDetailAPIHandler(BaseAPIHandler):
 
         async with async_session_maker() as session:
             from ..utils.permissions import can_manage_house
-            
+
             house_id = int(house_id)
-            
+
             # Vérifier les permissions de gestion
-            if not await can_manage_house(
-                session, current_user["id"], house_id
-            ):
+            if not await can_manage_house(session, current_user["id"], house_id):
                 return self.write_error_json("Access denied", 403)
-            
-            result = await session.execute(
-                select(House).where(House.id == house_id)
-            )
+
+            result = await session.execute(select(House).where(House.id == house_id))
             house = result.scalar_one_or_none()
 
             if not house:
@@ -274,25 +257,19 @@ class HouseDetailAPIHandler(BaseAPIHandler):
 
             # Mettre à jour les champs
             if "name" in data:
-                changes["name"] = {
-                    "old": house.name,
-                    "new": data["name"].strip()
-                }
+                changes["name"] = {"old": house.name, "new": data["name"].strip()}
                 house.name = data["name"].strip()
             if "address" in data:
                 changes["address"] = {
                     "old": house.address,
-                    "new": data["address"].strip()
+                    "new": data["address"].strip(),
                 }
                 house.address = data["address"].strip()
             if "length" in data:
                 try:
                     length = int(data["length"])
                     if 1 <= length <= 50:
-                        changes["length"] = {
-                            "old": house.length,
-                            "new": length
-                        }
+                        changes["length"] = {"old": house.length, "new": length}
                         house.length = length
                 except (ValueError, TypeError):
                     pass
@@ -300,10 +277,7 @@ class HouseDetailAPIHandler(BaseAPIHandler):
                 try:
                     width = int(data["width"])
                     if 1 <= width <= 50:
-                        changes["width"] = {
-                            "old": house.width,
-                            "new": width
-                        }
+                        changes["width"] = {"old": house.width, "new": width}
                         house.width = width
                 except (ValueError, TypeError):
                     pass
@@ -313,15 +287,17 @@ class HouseDetailAPIHandler(BaseAPIHandler):
             await session.commit()
             await session.refresh(house)
 
-            self.write_json({
-                "id": house.id,
-                "name": house.name,
-                "address": house.address,
-                "length": house.length,
-                "width": house.width,
-                "grid": house.grid,
-                "message": "House updated successfully"
-            })
+            self.write_json(
+                {
+                    "id": house.id,
+                    "name": house.name,
+                    "address": house.address,
+                    "length": house.length,
+                    "width": house.width,
+                    "grid": house.grid,
+                    "message": "House updated successfully",
+                }
+            )
 
     async def delete(self, house_id):
         current_user = self.get_current_user()
@@ -332,8 +308,7 @@ class HouseDetailAPIHandler(BaseAPIHandler):
             try:
                 result = await session.execute(
                     select(House).where(
-                        House.id == int(house_id),
-                        House.user_id == current_user["id"]
+                        House.id == int(house_id), House.user_id == current_user["id"]
                     )
                 )
                 house = result.scalar_one_or_none()
@@ -347,15 +322,11 @@ class HouseDetailAPIHandler(BaseAPIHandler):
                 await session.delete(house)
                 await session.commit()
 
-                self.write_json({
-                    "message": "House deleted successfully"
-                })
+                self.write_json({"message": "House deleted successfully"})
             except Exception as e:
                 await session.rollback()
                 print(f"Error deleting house: {e}")
-                return self.write_error_json(
-                    f"Cannot delete house: {str(e)}", 500
-                )
+                return self.write_error_json(f"Cannot delete house: {str(e)}", 500)
 
 
 class RoomsAPIHandler(BaseAPIHandler):
@@ -373,8 +344,7 @@ class RoomsAPIHandler(BaseAPIHandler):
             # Check that la maison appartient à l'utilisateur
             result = await session.execute(
                 select(House).where(
-                    House.id == int(house_id),
-                    House.user_id == current_user["id"]
+                    House.id == int(house_id), House.user_id == current_user["id"]
                 )
             )
             house = result.scalar_one_or_none()
@@ -388,16 +358,14 @@ class RoomsAPIHandler(BaseAPIHandler):
             )
             rooms = result.scalars().all()
 
-            self.write_json({
-                "rooms": [
-                    {
-                        "id": r.id,
-                        "name": r.name,
-                        "house_id": r.house_id
-                    }
-                    for r in rooms
-                ]
-            })
+            self.write_json(
+                {
+                    "rooms": [
+                        {"id": r.id, "name": r.name, "house_id": r.house_id}
+                        for r in rooms
+                    ]
+                }
+            )
 
     async def post(self, house_id):
         current_user = self.get_current_user()
@@ -417,8 +385,7 @@ class RoomsAPIHandler(BaseAPIHandler):
             # Check that la maison appartient à l'utilisateur
             result = await session.execute(
                 select(House).where(
-                    House.id == int(house_id),
-                    House.user_id == current_user["id"]
+                    House.id == int(house_id), House.user_id == current_user["id"]
                 )
             )
             house = result.scalar_one_or_none()
@@ -427,10 +394,7 @@ class RoomsAPIHandler(BaseAPIHandler):
                 return self.write_error_json("House not found", 404)
 
             # Create la pièce
-            new_room = Room(
-                house_id=int(house_id),
-                name=name
-            )
+            new_room = Room(house_id=int(house_id), name=name)
 
             session.add(new_room)
             await session.commit()
@@ -440,25 +404,25 @@ class RoomsAPIHandler(BaseAPIHandler):
             event = EventHistory(
                 house_id=house.id,
                 user_id=current_user["id"],
-                event_type='house_modified',
-                entity_type='room',
+                event_type="house_modified",
+                entity_type="room",
                 entity_id=new_room.id,
                 description=f"Pièce ajoutée: {new_room.name}",
-                event_metadata={
-                    "action": "create",
-                    "room_name": new_room.name
-                },
-                ip_address=self.request.remote_ip
+                event_metadata={"action": "create", "room_name": new_room.name},
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
             await session.commit()
 
-            self.write_json({
-                "id": new_room.id,
-                "name": new_room.name,
-                "house_id": new_room.house_id,
-                "message": "Room created successfully"
-            }, 201)
+            self.write_json(
+                {
+                    "id": new_room.id,
+                    "name": new_room.name,
+                    "house_id": new_room.house_id,
+                    "message": "Room created successfully",
+                },
+                201,
+            )
 
 
 class RoomDetailAPIHandler(BaseAPIHandler):
@@ -477,21 +441,16 @@ class RoomDetailAPIHandler(BaseAPIHandler):
             result = await session.execute(
                 select(Room)
                 .join(House)
-                .where(
-                    Room.id == int(room_id),
-                    House.user_id == current_user["id"]
-                )
+                .where(Room.id == int(room_id), House.user_id == current_user["id"])
             )
             room = result.scalar_one_or_none()
 
             if not room:
                 return self.write_error_json("Room not found", 404)
 
-            self.write_json({
-                "id": room.id,
-                "name": room.name,
-                "house_id": room.house_id
-            })
+            self.write_json(
+                {"id": room.id, "name": room.name, "house_id": room.house_id}
+            )
 
     async def put(self, room_id):
         current_user = self.get_current_user()
@@ -507,10 +466,7 @@ class RoomDetailAPIHandler(BaseAPIHandler):
             result = await session.execute(
                 select(Room)
                 .join(House)
-                .where(
-                    Room.id == int(room_id),
-                    House.user_id == current_user["id"]
-                )
+                .where(Room.id == int(room_id), House.user_id == current_user["id"])
             )
             room = result.scalar_one_or_none()
 
@@ -520,10 +476,7 @@ class RoomDetailAPIHandler(BaseAPIHandler):
             # Suivre les changements
             changes = {}
             if "name" in data:
-                changes["name"] = {
-                    "old": room.name,
-                    "new": data["name"].strip()
-                }
+                changes["name"] = {"old": room.name, "new": data["name"].strip()}
                 room.name = data["name"].strip()
 
             # Enregistrer dans l'historique si changements
@@ -531,30 +484,29 @@ class RoomDetailAPIHandler(BaseAPIHandler):
                 event = EventHistory(
                     house_id=room.house_id,
                     user_id=current_user["id"],
-                    event_type='house_modified',
-                    entity_type='room',
+                    event_type="house_modified",
+                    entity_type="room",
                     entity_id=room.id,
                     description=(
                         f"Pièce renommée: {changes['name']['old']} → "
                         f"{changes['name']['new']}"
                     ),
-                    event_metadata={
-                        "action": "update",
-                        "changes": changes
-                    },
-                    ip_address=self.request.remote_ip
+                    event_metadata={"action": "update", "changes": changes},
+                    ip_address=self.request.remote_ip,
                 )
                 session.add(event)
 
             await session.commit()
             await session.refresh(room)
 
-            self.write_json({
-                "id": room.id,
-                "name": room.name,
-                "house_id": room.house_id,
-                "message": "Room updated successfully"
-            })
+            self.write_json(
+                {
+                    "id": room.id,
+                    "name": room.name,
+                    "house_id": room.house_id,
+                    "message": "Room updated successfully",
+                }
+            )
 
     async def delete(self, room_id):
         current_user = self.get_current_user()
@@ -565,10 +517,7 @@ class RoomDetailAPIHandler(BaseAPIHandler):
             result = await session.execute(
                 select(Room)
                 .join(House)
-                .where(
-                    Room.id == int(room_id),
-                    House.user_id == current_user["id"]
-                )
+                .where(Room.id == int(room_id), House.user_id == current_user["id"])
             )
             room = result.scalar_one_or_none()
 
@@ -579,21 +528,16 @@ class RoomDetailAPIHandler(BaseAPIHandler):
             event = EventHistory(
                 house_id=room.house_id,
                 user_id=current_user["id"],
-                event_type='house_modified',
-                entity_type='room',
+                event_type="house_modified",
+                entity_type="room",
                 entity_id=room.id,
                 description=f"Pièce retirée: {room.name}",
-                event_metadata={
-                    "action": "delete",
-                    "room_name": room.name
-                },
-                ip_address=self.request.remote_ip
+                event_metadata={"action": "delete", "room_name": room.name},
+                ip_address=self.request.remote_ip,
             )
             session.add(event)
 
             await session.delete(room)
             await session.commit()
 
-            self.write_json({
-                "message": "Room deleted successfully"
-            })
+            self.write_json({"message": "Room deleted successfully"})

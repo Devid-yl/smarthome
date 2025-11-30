@@ -1,6 +1,7 @@
 """
 REST API for user management.
 """
+
 import json
 import tornado.web
 from sqlalchemy import select
@@ -13,7 +14,7 @@ import os
 
 class BaseAPIHandler(tornado.web.RequestHandler):
     """Base handler for REST APIs."""
-    
+
     # Set to True in subclasses that don't require authentication
     # (e.g., login, register endpoints)
     SKIP_AUTH_CHECK = False
@@ -25,25 +26,25 @@ class BaseAPIHandler(tornado.web.RequestHandler):
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
         self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Methods",
-                        "GET, POST, PUT, DELETE, OPTIONS")
-        self.set_header("Access-Control-Allow-Headers",
-                        "Content-Type, Authorization")
+        self.set_header(
+            "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
+        )
+        self.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
     def options(self, *args):
         self.set_status(204)
         self.finish()
-    
+
     def prepare(self):
         """Called before each request - enforce authentication."""
         # Skip auth check for OPTIONS requests (CORS preflight)
         if self.request.method == "OPTIONS":
             return
-        
+
         # Skip auth check if handler explicitly allows it
         if self.SKIP_AUTH_CHECK:
             return
-        
+
         # Verify authentication
         user = self.get_current_user()
         if not user:
@@ -58,15 +59,13 @@ class BaseAPIHandler(tornado.web.RequestHandler):
         auth_header = self.request.headers.get("Authorization")
         if auth_header:
             from ..jwt_auth import extract_token_from_header, verify_token
+
             token = extract_token_from_header(auth_header)
             if token:
                 payload = verify_token(token)
                 if payload:
-                    return {
-                        "id": payload.get("user_id"),
-                        "email": payload.get("email")
-                    }
-        
+                    return {"id": payload.get("user_id"), "email": payload.get("email")}
+
         # Fallback to cookie-based auth
         user_id = self.get_secure_cookie("uid")
         if not user_id:
@@ -74,7 +73,7 @@ class BaseAPIHandler(tornado.web.RequestHandler):
         username = self.get_secure_cookie("uname")
         return {
             "id": int(user_id.decode()),
-            "username": username.decode() if username else None
+            "username": username.decode() if username else None,
         }
 
     def write_json(self, data, status=200):
@@ -88,6 +87,7 @@ class BaseAPIHandler(tornado.web.RequestHandler):
 
 class RegisterAPIHandler(BaseAPIHandler):
     """POST /api/auth/register - User registration."""
+
     SKIP_AUTH_CHECK = True
 
     async def post(self):
@@ -109,16 +109,12 @@ class RegisterAPIHandler(BaseAPIHandler):
         async with async_session_maker() as session:
             # Check if user already exists
             result = await session.execute(
-                select(User).where(
-                    (User.username == username) | (User.email == email)
-                )
+                select(User).where((User.username == username) | (User.email == email))
             )
             existing = result.scalar_one_or_none()
 
             if existing:
-                return self.write_error_json(
-                    "Username or email already exists", 409
-                )
+                return self.write_error_json("Username or email already exists", 409)
 
             # Create new user
             hashed_pw = hash_password(password)
@@ -128,7 +124,7 @@ class RegisterAPIHandler(BaseAPIHandler):
                 password=hashed_pw,
                 phone_number=phone or None,
                 is_active=True,
-                date_joined=datetime.utcnow()
+                date_joined=datetime.utcnow(),
             )
 
             # Handle profile photo upload if present
@@ -145,16 +141,20 @@ class RegisterAPIHandler(BaseAPIHandler):
             self.set_secure_cookie("uid", str(new_user.id))
             self.set_secure_cookie("uname", new_user.username)
 
-            self.write_json({
-                "id": new_user.id,
-                "username": new_user.username,
-                "email": new_user.email,
-                "message": "User created successfully"
-            }, 201)
+            self.write_json(
+                {
+                    "id": new_user.id,
+                    "username": new_user.username,
+                    "email": new_user.email,
+                    "message": "User created successfully",
+                },
+                201,
+            )
 
 
 class LoginAPIHandler(BaseAPIHandler):
     """POST /api/auth/login - Connexion d'un utilisateur"""
+
     SKIP_AUTH_CHECK = True
 
     async def post(self):
@@ -167,9 +167,7 @@ class LoginAPIHandler(BaseAPIHandler):
         password = data.get("password", "").strip()
 
         if not username or not password:
-            return self.write_error_json(
-                "Username and password are required", 400
-            )
+            return self.write_error_json("Username and password are required", 400)
 
         async with async_session_maker() as session:
             result = await session.execute(
@@ -178,9 +176,7 @@ class LoginAPIHandler(BaseAPIHandler):
             user = result.scalar_one_or_none()
 
             if not user or not verify_password(password, user.password):
-                return self.write_error_json(
-                    "Invalid username or password", 401
-                )
+                return self.write_error_json("Invalid username or password", 401)
 
             if not user.is_active:
                 return self.write_error_json("Account is deactivated", 403)
@@ -189,13 +185,15 @@ class LoginAPIHandler(BaseAPIHandler):
             self.set_secure_cookie("uid", str(user.id))
             self.set_secure_cookie("uname", user.username)
 
-            self.write_json({
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "profile_image": user.profile_image,
-                "message": "Login successful"
-            })
+            self.write_json(
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "profile_image": user.profile_image,
+                    "message": "Login successful",
+                }
+            )
 
 
 class LogoutAPIHandler(BaseAPIHandler):
@@ -216,24 +214,25 @@ class CurrentUserAPIHandler(BaseAPIHandler):
             return self.write_error_json("Not authenticated", 401)
 
         async with async_session_maker() as session:
-            result = await session.execute(
-                select(User).where(User.id == user["id"])
-            )
+            result = await session.execute(select(User).where(User.id == user["id"]))
             db_user = result.scalar_one_or_none()
 
             if not db_user:
                 return self.write_error_json("User not found", 404)
 
-            self.write_json({
-                "id": db_user.id,
-                "username": db_user.username,
-                "email": db_user.email,
-                "phone_number": db_user.phone_number,
-                "profile_image": db_user.profile_image,
-                "is_active": db_user.is_active,
-                "date_joined": db_user.date_joined.isoformat()
-                if db_user.date_joined else None
-            })
+            self.write_json(
+                {
+                    "id": db_user.id,
+                    "username": db_user.username,
+                    "email": db_user.email,
+                    "phone_number": db_user.phone_number,
+                    "profile_image": db_user.profile_image,
+                    "is_active": db_user.is_active,
+                    "date_joined": (
+                        db_user.date_joined.isoformat() if db_user.date_joined else None
+                    ),
+                }
+            )
 
 
 class UserProfileAPIHandler(BaseAPIHandler):
@@ -249,9 +248,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
             return self.write_error_json("Not authenticated", 401)
 
         async with async_session_maker() as session:
-            result = await session.execute(
-                select(User).where(User.id == int(user_id))
-            )
+            result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()
 
             if not user:
@@ -259,22 +256,27 @@ class UserProfileAPIHandler(BaseAPIHandler):
 
             # Seul l'utilisateur lui-même peut voir son profil complet
             if current_user["id"] != user.id:
-                return self.write_json({
+                return self.write_json(
+                    {
+                        "id": user.id,
+                        "username": user.username,
+                        "profile_image": user.profile_image,
+                    }
+                )
+
+            self.write_json(
+                {
                     "id": user.id,
                     "username": user.username,
-                    "profile_image": user.profile_image
-                })
-
-            self.write_json({
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "phone_number": user.phone_number,
-                "profile_image": user.profile_image,
-                "is_active": user.is_active,
-                "date_joined": user.date_joined.isoformat()
-                if user.date_joined else None
-            })
+                    "email": user.email,
+                    "phone_number": user.phone_number,
+                    "profile_image": user.profile_image,
+                    "is_active": user.is_active,
+                    "date_joined": (
+                        user.date_joined.isoformat() if user.date_joined else None
+                    ),
+                }
+            )
 
     async def put(self, user_id):
         current_user = self.get_current_user()
@@ -290,9 +292,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
             return self.write_error_json("Invalid JSON", 400)
 
         async with async_session_maker() as session:
-            result = await session.execute(
-                select(User).where(User.id == int(user_id))
-            )
+            result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()
 
             if not user:
@@ -313,14 +313,16 @@ class UserProfileAPIHandler(BaseAPIHandler):
             await session.commit()
             await session.refresh(user)
 
-            self.write_json({
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "phone_number": user.phone_number,
-                "profile_image": user.profile_image,
-                "message": "Profile updated successfully"
-            })
+            self.write_json(
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "phone_number": user.phone_number,
+                    "profile_image": user.profile_image,
+                    "message": "Profile updated successfully",
+                }
+            )
 
     async def delete(self, user_id):
         current_user = self.get_current_user()
@@ -331,9 +333,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
             return self.write_error_json("Unauthorized", 403)
 
         async with async_session_maker() as session:
-            result = await session.execute(
-                select(User).where(User.id == int(user_id))
-            )
+            result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()
 
             if not user:
@@ -346,9 +346,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
             self.clear_cookie("uid")
             self.clear_cookie("uname")
 
-            self.write_json({
-                "message": "User account deleted successfully"
-            })
+            self.write_json({"message": "User account deleted successfully"})
 
 
 class UploadProfileImageHandler(BaseAPIHandler):
@@ -369,15 +367,15 @@ class UploadProfileImageHandler(BaseAPIHandler):
         file_info = self.request.files["image"][0]
         filename = file_info["filename"]
         content = file_info["body"]
-        
+
         # Vérifier la taille (max 5 Mo)
         if len(content) > 5 * 1024 * 1024:
             return self.write_error_json("File too large (max 5MB)", 400)
 
         # Sauvegarder le fichier
         from pathlib import Path
-        media_dir = Path(__file__).resolve().parents[3] / "media" / \
-            "profile_images"
+
+        media_dir = Path(__file__).resolve().parents[3] / "media" / "profile_images"
         media_dir.mkdir(parents=True, exist_ok=True)
 
         # Nom unique avec timestamp
@@ -391,16 +389,17 @@ class UploadProfileImageHandler(BaseAPIHandler):
 
         # Mettre à jour la DB
         async with async_session_maker() as session:
-            result = await session.execute(
-                select(User).where(User.id == int(user_id))
-            )
+            result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()
 
             if user:
                 user.profile_image = f"/media/profile_images/{unique_filename}"
                 await session.commit()
 
-        self.write_json({
-            "profile_image": f"/media/profile_images/{unique_filename}",
-            "message": "Profile image uploaded successfully"
-        }, 201)
+        self.write_json(
+            {
+                "profile_image": f"/media/profile_images/{unique_filename}",
+                "message": "Profile image uploaded successfully",
+            },
+            201,
+        )
