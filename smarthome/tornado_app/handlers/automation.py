@@ -15,35 +15,37 @@ from .base import BaseAPIHandler
 class AutomationRulesHandler(BaseAPIHandler):
     """
     POST /api/automation/trigger - Trigger automation
-    Analyzes sensors and controls equipment according to rules.
+    Analyzes sensors and controls equipment according to database rules only.
     """
 
     async def post(self):
         """
-        Main B2B logic:
-        1. Apply custom rules (DB)
-        2. Apply default rules (hard-coded)
+        Apply automation rules from database:
+        - Fetch all active rules
+        - Evaluate sensor conditions
+        - Execute equipment actions
+        - Log to event history
         """
         actions_taken = []
 
         async with async_session_maker() as session:
-            # ÉTAPE 1: Appliquer les règles personnalisées
             from ..models import AutomationRule
             
+            # Fetch all active automation rules
             result = await session.execute(
                 select(AutomationRule).where(
                     AutomationRule.is_active == True  # noqa
                 )
             )
-            custom_rules = result.scalars().all()
+            rules = result.scalars().all()
             
-            for rule in custom_rules:
-                # Retrieve le capteur
+            for rule in rules:
+                # Get the sensor for this rule
                 sensor = await session.get(Sensor, rule.sensor_id)
                 if not sensor or not sensor.is_active or sensor.value is None:
                     continue
                 
-                # Évaluer la condition
+                # Evaluate condition
                 condition_met = False
                 if rule.condition_operator == '>':
                     condition_met = sensor.value > rule.condition_value
@@ -58,7 +60,7 @@ class AutomationRulesHandler(BaseAPIHandler):
                 elif rule.condition_operator == '!=':
                     condition_met = sensor.value != rule.condition_value
                 
-                # Appliquer l'action si condition vraie
+                # Execute action if condition is met
                 if condition_met:
                     equipment = await session.get(Equipment, rule.equipment_id)
                     if equipment and equipment.is_active:
@@ -68,15 +70,15 @@ class AutomationRulesHandler(BaseAPIHandler):
                             equipment.last_update = datetime.utcnow()
                             rule.last_triggered = datetime.utcnow()
                             
-                            # Enregistrer dans l'historique
+                            # Log to event history
                             event = EventHistory(
                                 house_id=equipment.house_id,
-                                user_id=None,  # Action automatique
+                                user_id=None,  # Automatic action
                                 event_type='automation_triggered',
                                 entity_type='automation_rule',
                                 entity_id=rule.id,
                                 description=(
-                                    f"Règle '{rule.name}' déclenchée: "
+                                    f"Rule '{rule.name}' triggered: "
                                     f"{equipment.name} {old_state} → "
                                     f"{rule.action_state}"
                                 ),
@@ -102,169 +104,30 @@ class AutomationRulesHandler(BaseAPIHandler):
                                 "equipment_id": equipment.id,
                                 "equipment_name": equipment.name,
                                 "reason": (
-                                    f"Custom rule: {rule.name} "
-                                    f"({sensor.name} "
+                                    f"Rule: {rule.name} "
+                                    f"({sensor.name} {sensor.value} "
                                     f"{rule.condition_operator} "
                                     f"{rule.condition_value})"
                                 ),
-                                "rule_id": rule.id
+                                "rule_id": rule.id,
+                                "rule_name": rule.name
                             })
-            
-            # ÉTAPE 2: Appliquer les règles par défaut
-            # 1. Récupérer tous les capteurs actifs
-            result = await session.execute(
-                select(Sensor).where(Sensor.is_active == True)  # noqa
-            )
-            sensors = result.scalars().all()
+                            
+                            # Broadcast equipment update via WebSocket
+                            from .websocket import RealtimeHandler
+                            RealtimeHandler.broadcast_equipment_update(
+                                equipment.id,
+                                equipment.type,
+                                equipment.state,
+                                equipment.is_active,
+                                equipment.house_id
+                            )
 
-            # 2. Récupérer tous les équipements actifs
-            result = await session.execute(
-                select(Equipment).where(Equipment.is_active == True)  # noqa
-            )
-            equipments = result.scalars().all()
-
-            # Grouper par room_id pour logique locale
-            sensors_by_room = {}
-            equipments_by_room = {}
-
-            for sensor in sensors:
-                if sensor.room_id not in sensors_by_room:
-                    sensors_by_room[sensor.room_id] = []
-                sensors_by_room[sensor.room_id].append(sensor)
-
-            for equipment in equipments:
-                if equipment.room_id not in equipments_by_room:
-                    equipments_by_room[equipment.room_id] = {}
-                if equipment.type not in equipments_by_room[equipment.room_id]:
-                    equipments_by_room[equipment.room_id][equipment.type] = []
-                equipments_by_room[equipment.room_id][equipment.type].append(
-                    equipment
-                )
-
-            # 3. Appliquer les règles par pièce
-            for room_id, room_sensors in sensors_by_room.items():
-                room_equips = equipments_by_room.get(room_id, {})
-
-                for sensor in room_sensors:
-                    # RÈGLE 1: Température → Volets
-                    if sensor.type == "temperature" and sensor.value:
-                        if sensor.value > 28:  # Trop chaud
-                            for shutter in room_equips.get("shutter", []):
-                                if shutter.state != "closed":
-                                    shutter.state = "closed"
-                                    shutter.last_update = datetime.utcnow()
-                                    actions_taken.append({
-                                        "action": "close_shutter",
-                                        "equipment_id": shutter.id,
-                                        "equipment_name": shutter.name,
-                                        "reason": f"Temperature {sensor.value}°C > 28°C",  # noqa
-                                        "room_id": room_id
-                                    })
-
-                    # RÈGLE 2: Luminosité → Lumières
-                    if sensor.type == "luminosity" and sensor.value:
-                        if sensor.value < 200:  # Trop sombre
-                            for light in room_equips.get("light", []):
-                                if light.state != "on":
-                                    light.state = "on"
-                                    light.last_update = datetime.utcnow()
-                                    actions_taken.append({
-                                        "action": "turn_on_light",
-                                        "equipment_id": light.id,
-                                        "equipment_name": light.name,
-                                        "reason": f"Luminosity {sensor.value} lux < 200",  # noqa
-                                        "room_id": room_id
-                                    })
-                        elif sensor.value > 500:  # Assez lumineux
-                            for light in room_equips.get("light", []):
-                                if light.state != "off":
-                                    light.state = "off"
-                                    light.last_update = datetime.utcnow()
-                                    actions_taken.append({
-                                        "action": "turn_off_light",
-                                        "equipment_id": light.id,
-                                        "equipment_name": light.name,
-                                        "reason": f"Luminosity {sensor.value} lux > 500",  # noqa
-                                        "room_id": room_id
-                                    })
-
-                    # RÈGLE 3: Pluie → Volets
-                    if sensor.type == "rain" and sensor.value:
-                        if sensor.value > 50:  # Pluie détectée (>50%)
-                            for shutter in room_equips.get("shutter", []):
-                                if shutter.state != "closed":
-                                    shutter.state = "closed"
-                                    shutter.last_update = datetime.utcnow()
-                                    actions_taken.append({
-                                        "action": "close_shutter",
-                                        "equipment_id": shutter.id,
-                                        "equipment_name": shutter.name,
-                                        "reason": f"Rain detected {sensor.value}%",  # noqa
-                                        "room_id": room_id
-                                    })
-
-                    # RÈGLE 4: Présence → Lumières + Sono
-                    if sensor.type == "presence" and sensor.value:
-                        if sensor.value == 1:  # Présence détectée
-                            # Allumer les lumières
-                            for light in room_equips.get("light", []):
-                                if light.state != "on":
-                                    light.state = "on"
-                                    light.last_update = datetime.utcnow()
-                                    actions_taken.append({
-                                        "action": "turn_on_light",
-                                        "equipment_id": light.id,
-                                        "equipment_name": light.name,
-                                        "reason": "Presence detected",
-                                        "room_id": room_id
-                                    })
-
-                            # Activer le système sonore
-                            for sono in room_equips.get("sound_system", []):
-                                if sono.state != "on":
-                                    sono.state = "on"
-                                    sono.last_update = datetime.utcnow()
-                                    actions_taken.append({
-                                        "action": "turn_on_sound",
-                                        "equipment_id": sono.id,
-                                        "equipment_name": sono.name,
-                                        "reason": "Presence detected",
-                                        "room_id": room_id
-                                    })
-                        elif sensor.value == 0:  # Pas de présence
-                            # Éteindre les lumières après un délai
-                            for light in room_equips.get("light", []):
-                                if light.state != "off":
-                                    light.state = "off"
-                                    light.last_update = datetime.utcnow()
-                                    actions_taken.append({
-                                        "action": "turn_off_light",
-                                        "equipment_id": light.id,
-                                        "equipment_name": light.name,
-                                        "reason": "No presence detected",
-                                        "room_id": room_id
-                                    })
-
-            # Sauvegarder toutes les modifications
+            # Commit all changes
             await session.commit()
-            
-            # Broadcaster les changements d'équipements via WebSocket
-            from .websocket import RealtimeHandler
-            for action in actions_taken:
-                if action.get("equipment_id"):
-                    # Retrieve l'équipement pour avoir son type et house_id
-                    equip = await session.get(Equipment, action["equipment_id"])
-                    if equip:
-                        RealtimeHandler.broadcast_equipment_update(
-                            equip.id,
-                            equip.type,
-                            equip.state,
-                            equip.is_active,
-                            equip.house_id
-                        )
 
         self.write_json({
-            "message": "Automation rules applied",
+            "message": "Automation rules applied successfully",
             "actions_count": len(actions_taken),
             "actions": actions_taken
         })

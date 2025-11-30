@@ -47,16 +47,20 @@ Gérez vos maisons, pièces, capteurs et équipements intelligents depuis une in
 - ✅ Gestion centralisée par type
 - ✅ API dédiée par équipement
 
-### 🤖 Automatisation intelligente (B2B)
-**Règles inter-API prédéfinies** :
-- 🌡️ **Température > 28°C** → Fermeture automatique des volets
-- 💡 **Luminosité < 200 lux** → Allumage des lumières
-- 🌧️ **Pluie > 50%** → Fermeture des volets
-- 👤 **Présence détectée** → Allumage lumières + système audio
+### 🤖 Automatisation intelligente
+**Système de règles conditionnelles** :
+- ✅ Création de règles personnalisées (capteur → condition → équipement)
+- ✅ Support de 6 opérateurs (>, <, >=, <=, ==, !=)
+- ✅ Activation/désactivation individuelle des règles
+- ✅ Déclenchement manuel ou automatique via API
+- ✅ Historique détaillé des actions exécutées
+- ✅ Logging complet (raison, équipement, action, timestamps)
 
-- ✅ Déclenchement manuel via API
-- ✅ Historique des actions exécutées
-- ✅ Logging détaillé (raison, équipement, action)
+**Exemples de règles** :
+- 🌡️ Température > 28°C → Fermer volets
+- 💡 Luminosité < 200 lux → Allumer lumières
+- 🌧️ Pluie > 50% → Fermer volets
+- 👤 Présence == 1 → Allumer lumières
 
 ### 👤 Gestion des utilisateurs
 - ✅ Inscription avec email et téléphone
