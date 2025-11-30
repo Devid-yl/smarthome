@@ -85,6 +85,21 @@ button {
     border-color: #d1d5db;
 }
 
+.btn-secondary {
+    background-color: white !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.btn-secondary:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+}
+
 .btn-danger {
     background-color: white;
     color: var(--danger-color);

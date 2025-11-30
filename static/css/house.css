@@ -142,16 +142,6 @@
             background: #d97706;
         }
         
-        .btn-secondary { 
-            background: white; 
-            color: var(--text-main); 
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-secondary:hover {
-            background: #f9fafb;
-        }
-        
         .modal {
             display: none;
             position: fixed;

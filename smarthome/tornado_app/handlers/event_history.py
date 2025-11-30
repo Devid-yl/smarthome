@@ -8,36 +8,6 @@ from ..database import async_session_maker
 from .base import BaseAPIHandler
 
 
-class BaseAPIHandler(tornado.web.RequestHandler):
-    """Base handler pour les API REST."""
-
-    def check_xsrf_cookie(self):
-        """Disable XSRF for REST APIs."""
-        pass
-
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Methods",
-                        "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-        self.set_header("Access-Control-Allow-Headers",
-                        "Content-Type, Authorization")
-
-    def options(self, *args):
-        self.set_status(204)
-        self.finish()
-
-    def get_current_user(self):
-        user_id = self.get_secure_cookie("uid")
-        if not user_id:
-            return None
-        username = self.get_secure_cookie("uname")
-        return {
-            "id": int(user_id.decode()),
-            "username": username.decode() if username else None
-        }
-
-
 class EventHistoryHandler(BaseAPIHandler):
     """Handler pour consulter l'historique des événements."""
 
@@ -198,6 +168,45 @@ class EventTypesHandler(BaseAPIHandler):
         })
 
 
+class EventCleanupHandler(BaseAPIHandler):
+    """Handler pour nettoyer manuellement l'historique."""
+
+    async def post(self, house_id):
+        """
+        Déclenche un nettoyage manuel de l'historique.
+        Réservé au propriétaire de la maison.
+        """
+        current_user = self.get_current_user()
+        if not current_user:
+            self.set_status(401)
+            self.write({"error": "Not authenticated"})
+            return
+
+        house_id = int(house_id)
+        user_id = current_user["id"]
+
+        async with async_session_maker() as session:
+            # Vérifier que l'utilisateur est propriétaire
+            house = await session.get(House, house_id)
+            if not house:
+                self.set_status(404)
+                self.write({"error": "House not found"})
+                return
+
+            if house.user_id != user_id:
+                self.set_status(403)
+                self.write({"error": "Only owner can cleanup history"})
+                return
+
+            # Effectuer le nettoyage
+            result = await cleanup_old_events(session, house_id)
+            
+            self.write({
+                "success": True,
+                "cleanup_result": result
+            })
+
+
 class EventStatsHandler(BaseAPIHandler):
     """Handler pour obtenir des statistiques sur l'historique."""
 
@@ -290,12 +299,168 @@ class EventStatsHandler(BaseAPIHandler):
             self.write(stats)
 
 
+# Configuration du nettoyage automatique
+EVENT_CLEANUP_CONFIG = {
+    "max_events_per_house": 1000,  # Nombre max d'événements par maison
+    "important_types": [
+        "member_action",           # Actions des membres (important)
+        "house_modified",          # Modifications maison (important)
+        "automation_triggered"     # Automatisations (moyennement important)
+    ],
+    "low_priority_types": [
+        "sensor_reading",          # Lectures de capteurs (moins important)
+        "equipment_control"        # Contrôles équipements (moins important)
+    ],
+    "keep_recent_days": 7,         # Garder tous événements 7 derniers jours
+    "keep_important_days": 90      # Garder événements importants 90 jours
+}
+
+
+async def cleanup_old_events(session, house_id):
+    """
+    Nettoie les anciens événements d'une maison.
+    
+    Stratégie de nettoyage:
+    1. Supprime les événements peu importants de plus de 7 jours
+    2. Supprime les événements importants de plus de 90 jours
+    3. Si total dépasse max après étapes 1-2:
+       - Supprime les plus anciens événements peu importants
+       - Jusqu'à atteindre 80% du seuil maximum
+    
+    Args:
+        session: SQLAlchemy async session
+        house_id: ID de la maison
+    """
+    from sqlalchemy import func, delete
+    
+    # Compter le nombre total d'événements
+    count_query = select(func.count(EventHistory.id)).where(
+        EventHistory.house_id == house_id
+    )
+    count_result = await session.execute(count_query)
+    total_events = count_result.scalar()
+    
+    # Si on est sous le seuil, pas besoin de nettoyer
+    if total_events < EVENT_CLEANUP_CONFIG["max_events_per_house"]:
+        return {
+            "deleted": 0,
+            "total": total_events,
+            "reason": "below_threshold"
+        }
+    
+    # Dates de coupure
+    recent_cutoff = datetime.utcnow() - timedelta(
+        days=EVENT_CLEANUP_CONFIG["keep_recent_days"]
+    )
+    important_cutoff = datetime.utcnow() - timedelta(
+        days=EVENT_CLEANUP_CONFIG["keep_important_days"]
+    )
+    
+    deleted_count = 0
+    
+    # ÉTAPE 1: Supprimer événements peu importants de plus de 7 jours
+    delete_query = delete(EventHistory).where(
+        and_(
+            EventHistory.house_id == house_id,
+            EventHistory.created_at < recent_cutoff,
+            EventHistory.event_type.in_(
+                EVENT_CLEANUP_CONFIG["low_priority_types"]
+            )
+        )
+    )
+    result = await session.execute(delete_query)
+    deleted_count += result.rowcount
+    
+    # ÉTAPE 2: Supprimer événements importants de plus de 90 jours
+    delete_important = delete(EventHistory).where(
+        and_(
+            EventHistory.house_id == house_id,
+            EventHistory.created_at < important_cutoff,
+            EventHistory.event_type.in_(
+                EVENT_CLEANUP_CONFIG["important_types"]
+            )
+        )
+    )
+    result_important = await session.execute(delete_important)
+    deleted_count += result_important.rowcount
+    
+    await session.commit()
+    
+    # Recompter après première phase
+    count_result = await session.execute(count_query)
+    current_total = count_result.scalar()
+    
+    # ÉTAPE 3: Si toujours au-dessus du seuil,
+    # supprimer les plus anciens événements (peu importants d'abord)
+    target_count = int(EVENT_CLEANUP_CONFIG["max_events_per_house"] * 0.8)
+    
+    if current_total > EVENT_CLEANUP_CONFIG["max_events_per_house"]:
+        to_delete = current_total - target_count
+        
+        # D'abord, supprimer les plus anciens événements peu importants
+        oldest_low = select(EventHistory.id).where(
+            and_(
+                EventHistory.house_id == house_id,
+                EventHistory.event_type.in_(
+                    EVENT_CLEANUP_CONFIG["low_priority_types"]
+                )
+            )
+        ).order_by(EventHistory.created_at).limit(to_delete)
+        
+        result = await session.execute(oldest_low)
+        ids_to_delete = [row[0] for row in result.all()]
+        
+        if ids_to_delete:
+            delete_oldest = delete(EventHistory).where(
+                EventHistory.id.in_(ids_to_delete)
+            )
+            result = await session.execute(delete_oldest)
+            deleted_count += result.rowcount
+            to_delete -= result.rowcount
+            await session.commit()
+        
+        # Si on doit encore supprimer, prendre les événements importants
+        if to_delete > 0:
+            oldest_important = select(EventHistory.id).where(
+                and_(
+                    EventHistory.house_id == house_id,
+                    EventHistory.event_type.in_(
+                        EVENT_CLEANUP_CONFIG["important_types"]
+                    )
+                )
+            ).order_by(EventHistory.created_at).limit(to_delete)
+            
+            result = await session.execute(oldest_important)
+            ids_to_delete = [row[0] for row in result.all()]
+            
+            if ids_to_delete:
+                delete_oldest_imp = delete(EventHistory).where(
+                    EventHistory.id.in_(ids_to_delete)
+                )
+                result = await session.execute(delete_oldest_imp)
+                deleted_count += result.rowcount
+                await session.commit()
+    
+    # Recompter final
+    count_result = await session.execute(count_query)
+    new_total = count_result.scalar()
+    
+    return {
+        "deleted": deleted_count,
+        "total_before": total_events,
+        "total_after": new_total,
+        "target": target_count,
+        "reason": "automatic_cleanup"
+    }
+
+
 # Fonction helper pour créer des entrées d'historique
 async def log_event(session, house_id, user_id, event_type, description,
                     entity_type=None, entity_id=None, metadata=None,
                     ip_address=None):
     """
     Helper pour créer une entrée dans l'historique.
+    Effectue un nettoyage automatique si nécessaire.
 
     Args:
         session: SQLAlchemy async session
@@ -319,4 +484,10 @@ async def log_event(session, house_id, user_id, event_type, description,
         ip_address=ip_address
     )
     session.add(event)
+    
+    # Déclencher nettoyage automatique toutes les 100 insertions
+    import random
+    if random.randint(1, 100) == 1:
+        await cleanup_old_events(session, house_id)
+    
     return event

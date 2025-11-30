@@ -1,5 +1,5 @@
 """
-API REST pour la gestion des maisons et des pièces
+REST API for house and room management.
 """
 import json
 import tornado.web
@@ -13,8 +13,8 @@ from .base import BaseAPIHandler
 
 class HousesAPIHandler(BaseAPIHandler):
     """
-    GET /api/houses - Liste toutes les maisons de l'utilisateur
-    POST /api/houses - Créer une nouvelle maison
+    GET /api/houses - List all user's houses
+    POST /api/houses - Create a new house
     """
 
     async def get(self):
@@ -26,7 +26,7 @@ class HousesAPIHandler(BaseAPIHandler):
             from sqlalchemy import and_
             from ..models import HouseMember
             
-            # Retrieve les maisons dont l'utilisateur est propriétaire
+            # Retrieve houses owned by the user
             owned_result = await session.execute(
                 select(House)
                 .where(House.user_id == current_user["id"])
@@ -34,7 +34,7 @@ class HousesAPIHandler(BaseAPIHandler):
             )
             owned_houses = owned_result.scalars().all()
 
-            # Retrieve les maisons dont l'utilisateur est membre accepté
+            # Retrieve houses where user is an accepted member
             member_result = await session.execute(
                 select(HouseMember)
                 .where(
@@ -49,7 +49,7 @@ class HousesAPIHandler(BaseAPIHandler):
 
             houses_list = []
             
-            # Add les maisons possédées
+            # Add owned houses
             for h in owned_houses:
                 houses_list.append({
                     "id": h.id,
@@ -69,10 +69,10 @@ class HousesAPIHandler(BaseAPIHandler):
                     ]
                 })
 
-            # Add les maisons partagées
+            # Add shared houses
             for membership in memberships:
                 if membership.house:
-                    # Charger les rooms
+                    # Load rooms
                     await session.refresh(membership.house, ['rooms'])
                     houses_list.append({
                         "id": membership.house.id,
@@ -114,7 +114,7 @@ class HousesAPIHandler(BaseAPIHandler):
         if not name:
             return self.write_error_json("House name is required", 400)
 
-        # Valider les dimensions
+        # Validate dimensions
         try:
             length = int(length) if length else 10
             width = int(width) if width else 10
@@ -126,13 +126,13 @@ class HousesAPIHandler(BaseAPIHandler):
             )
 
         async with async_session_maker() as session:
-            # Create une grille avec un contour de murs automatique
-            # Grille réelle: (length+2) x (width+2) pour le contour
+            # Create a grid with automatic wall borders
+            # Actual grid: (length+2) x (width+2) for borders
             grid = []
             for i in range(length + 2):
                 row = []
                 for j in range(width + 2):
-                    # Contour = mur (1), intérieur = vide (0)
+                    # Border = wall (1), interior = empty (0)
                     is_border = (
                         i == 0 or i == length + 1 or
                         j == 0 or j == width + 1
@@ -146,7 +146,7 @@ class HousesAPIHandler(BaseAPIHandler):
                 address=address or "",
                 length=length,
                 width=width,
-                grid=grid  # Grille avec contour de murs
+                grid=grid  # Grid with wall borders
             )
 
             session.add(new_house)

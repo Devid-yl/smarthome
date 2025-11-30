@@ -1,5 +1,5 @@
 """
-Handlers API pour les règles d'automatisation
+API handlers for automation rules.
 """
 import json
 import tornado.web
@@ -13,12 +13,12 @@ from .base import BaseAPIHandler
 
 class AutomationRulesListHandler(BaseAPIHandler):
     """
-    GET /api/automation/rules?house_id=X - Liste des règles
-    POST /api/automation/rules - Créer une règle
+    GET /api/automation/rules?house_id=X - List rules
+    POST /api/automation/rules - Create a rule
     """
 
     async def get(self):
-        """Liste toutes les règles d'une maison"""
+        """List all rules for a house."""
         house_id = self.get_argument("house_id", None)
         
         if not house_id:
@@ -64,7 +64,7 @@ class AutomationRulesListHandler(BaseAPIHandler):
             })
 
     async def post(self):
-        """Créer une nouvelle règle"""
+        """Create a new automation rule."""
         try:
             data = json.loads(self.request.body)
         except json.JSONDecodeError:

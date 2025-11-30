@@ -10,7 +10,7 @@ from .base import BaseAPIHandler
 
 
 class BaseAPIHandler(tornado.web.RequestHandler):
-    """Base handler pour les API REST."""
+    """Base handler for REST APIs."""
 
     def check_xsrf_cookie(self):
         """Disable XSRF for REST APIs."""
@@ -40,10 +40,10 @@ class BaseAPIHandler(tornado.web.RequestHandler):
 
 
 class HouseMembersHandler(BaseAPIHandler):
-    """Handler pour la gestion des membres d'une maison."""
+    """Handler for house member management."""
 
     async def get(self, house_id):
-        """Liste tous les membres d'une maison."""
+        """List all members of a house."""
         current_user = self.get_current_user()
         if not current_user:
             self.set_status(401)
@@ -78,7 +78,7 @@ class HouseMembersHandler(BaseAPIHandler):
                 self.write({"error": "Access denied"})
                 return
 
-            # Retrieve tous les membres
+            # Retrieve all members
             query = select(HouseMember).where(
                 HouseMember.house_id == house_id
             ).options(

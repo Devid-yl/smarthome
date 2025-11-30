@@ -9,13 +9,13 @@ from .base import BaseAPIHandler
 
 
 class EquipmentsListHandler(BaseAPIHandler):
-    """GET /api/equipments - Liste tous les équipements
-    POST /api/equipments - Créer un équipement"""
+    """GET /api/equipments - List all equipments
+    POST /api/equipments - Create an equipment"""
 
     async def get(self):
         """
-        Récupérer tous les équipements.
-        Optionnel: filtrer par room/house/type.
+        Get all equipments.
+        Optional: filter by room/house/type.
         """
         room_id = self.get_argument("room_id", None)
         house_id = self.get_argument("house_id", None)
@@ -52,7 +52,7 @@ class EquipmentsListHandler(BaseAPIHandler):
             self.write_json({"equipments": equipments_data})
 
     async def post(self):
-        """Créer un nouvel équipement"""
+        """Create a new equipment."""
         try:
             data = json.loads(self.request.body)
         except json.JSONDecodeError:
@@ -65,7 +65,7 @@ class EquipmentsListHandler(BaseAPIHandler):
                 f"Missing required fields: {', '.join(required)}")
             return
 
-        # Valider le type d'équipement
+        # Validate equipment type
         valid_types = ["shutter", "door", "light", "sound_system"]
         if data["type"] not in valid_types:
             self.write_error_json(
@@ -122,12 +122,12 @@ class EquipmentsListHandler(BaseAPIHandler):
 
 
 class EquipmentDetailHandler(BaseAPIHandler):
-    """GET /api/equipments/{id} - Détails d'un équipement
-    PUT /api/equipments/{id} - Mettre à jour un équipement
-    DELETE /api/equipments/{id} - Supprimer un équipement"""
+    """GET /api/equipments/{id} - Equipment details
+    PUT /api/equipments/{id} - Update an equipment
+    DELETE /api/equipments/{id} - Delete an equipment"""
 
     async def get(self, equipment_id):
-        """Récupérer les détails d'un équipement"""
+        """Get equipment details."""
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.id == int(equipment_id))

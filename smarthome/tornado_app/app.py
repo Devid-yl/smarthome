@@ -35,7 +35,8 @@ from .handlers.house_members import (
     SearchUsersHandler, SearchHousesHandler, RequestHouseAccessHandler
 )
 from .handlers.event_history import (
-    EventHistoryHandler, EventTypesHandler, EventStatsHandler
+    EventHistoryHandler, EventTypesHandler, EventStatsHandler,
+    EventCleanupHandler
 )
 from .handlers.user_positions import UserPositionHandler
 from .handlers.weather import WeatherHandler, ValidateAddressHandler
@@ -52,8 +53,26 @@ class RedirectHandler(tornado.web.RequestHandler):
 
 class NotFoundHandler(tornado.web.RequestHandler):
     """Handles 404 errors by redirecting to home"""
-    def prepare(self):
-        self.redirect("http://10.192.138.9:8001/", permanent=False)
+    def get(self):
+        self.redirect("/app/dashboard.html", permanent=False)
+    
+    def post(self):
+        self.redirect("/app/dashboard.html", permanent=False)
+    
+    def put(self):
+        self.redirect("/app/dashboard.html", permanent=False)
+    
+    def delete(self):
+        self.redirect("/app/dashboard.html", permanent=False)
+
+
+class CustomStaticFileHandler(tornado.web.StaticFileHandler):
+    """Custom static file handler that redirects to dashboard on 404"""
+    def write_error(self, status_code, **kwargs):
+        if status_code == 404:
+            self.redirect("/app/dashboard.html", permanent=False)
+        else:
+            super().write_error(status_code, **kwargs)
 
 
 def make_app():
@@ -70,7 +89,7 @@ def make_app():
         (r"/profile", RedirectHandler, {"url": "/app/profile.html"}),
         
         # Pages SPA (app statiques)
-        (r"/app/(.*)", tornado.web.StaticFileHandler,
+        (r"/app/(.*)", CustomStaticFileHandler,
          {"path": os.path.join(settings["static_path"], "app")}),
         
         # Éditeur de grille d'intérieur
@@ -133,6 +152,7 @@ def make_app():
         # API REST - Historique des événements
         (r"/api/houses/([0-9]+)/history", EventHistoryHandler),
         (r"/api/houses/([0-9]+)/history/stats", EventStatsHandler),
+        (r"/api/houses/([0-9]+)/history/cleanup", EventCleanupHandler),
         (r"/api/event-types", EventTypesHandler),
         
         # API REST - Positions des utilisateurs

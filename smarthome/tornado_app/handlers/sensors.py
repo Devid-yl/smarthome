@@ -10,13 +10,13 @@ from .base import BaseAPIHandler
 
 
 class SensorsListHandler(BaseAPIHandler):
-    """GET /api/sensors - Liste tous les capteurs
-    POST /api/sensors - Créer un capteur"""
+    """GET /api/sensors - List all sensors
+    POST /api/sensors - Create a sensor"""
 
     async def get(self):
         """
-        Récupérer tous les capteurs.
-        Optionnel: filtrer par room_id ou house_id.
+        Get all sensors.
+        Optional: filter by room_id or house_id.
         """
         room_id = self.get_argument("room_id", None)
         house_id = self.get_argument("house_id", None)
@@ -50,7 +50,7 @@ class SensorsListHandler(BaseAPIHandler):
             self.write_json({"sensors": sensors_data})
 
     async def post(self):
-        """Créer un nouveau capteur"""
+        """Create a new sensor."""
         try:
             data = json.loads(self.request.body)
         except json.JSONDecodeError:
@@ -63,7 +63,7 @@ class SensorsListHandler(BaseAPIHandler):
                 f"Missing required fields: {', '.join(required)}")
             return
 
-        # Valider le type de capteur
+        # Validate sensor type
         valid_types = ["temperature", "luminosity", "rain", "presence"]
         if data["type"] not in valid_types:
             self.write_error_json(
@@ -84,7 +84,7 @@ class SensorsListHandler(BaseAPIHandler):
             await session.commit()
             await session.refresh(new_sensor)
 
-            # Enregistrer dans l'historique
+            # Record to event history
             user_id_cookie = self.get_secure_cookie("uid")
             user_id = int(user_id_cookie.decode()) if user_id_cookie else None
             event = EventHistory(
@@ -130,12 +130,12 @@ class SensorsListHandler(BaseAPIHandler):
 
 
 class SensorDetailHandler(BaseAPIHandler):
-    """GET /api/sensors/{id} - Détails d'un capteur
-    PUT /api/sensors/{id} - Mettre à jour un capteur
-    DELETE /api/sensors/{id} - Supprimer un capteur"""
+    """GET /api/sensors/{id} - Sensor details
+    PUT /api/sensors/{id} - Update a sensor
+    DELETE /api/sensors/{id} - Delete a sensor"""
 
     async def get(self, sensor_id):
-        """Récupérer les détails d'un capteur"""
+        """Get sensor details."""
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Sensor).where(Sensor.id == int(sensor_id))

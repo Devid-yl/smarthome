@@ -365,8 +365,8 @@ function displayHouseGrid() {
                         <img src="${usersHere[0].profile_image}" alt="${usersHere[0].username}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(23, 162, 184, 0.9); box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     </div>`;
                 } else {
-                    // Sinon, afficher le badge avec les noms
-                    const usernames = usersHere.map(u => u.username).join(', ');
+                    // Sinon, afficher le badge avec les noms (limités à 3 caractères)
+                    const usernames = usersHere.map(u => u.username.length > 3 ? u.username.substring(0, 3) + '...' : u.username).join(', ');
                     avatarHTML = `<div style="position: absolute; top: 2px; left: 2px; background: rgba(23, 162, 184, 0.9); color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: bold; z-index: 10;">
                         👤 ${usernames}
                     </div>`;

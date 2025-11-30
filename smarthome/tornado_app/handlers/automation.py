@@ -1,6 +1,6 @@
 """
 Business Logic B2B: Communication Sensors → Equipments
-Logique d'automatisation basée sur les données des capteurs
+Automation logic based on sensor data.
 """
 import json
 import tornado.web
@@ -14,15 +14,15 @@ from .base import BaseAPIHandler
 
 class AutomationRulesHandler(BaseAPIHandler):
     """
-    POST /api/automation/trigger - Déclencher l'automatisation
-    Analyse les capteurs et contrôle les équipements selon des règles
+    POST /api/automation/trigger - Trigger automation
+    Analyzes sensors and controls equipment according to rules.
     """
 
     async def post(self):
         """
-        Logique B2B principale:
-        1. Appliquer les règles personnalisées (DB)
-        2. Appliquer les règles par défaut (hard-codées)
+        Main B2B logic:
+        1. Apply custom rules (DB)
+        2. Apply default rules (hard-coded)
         """
         actions_taken = []
 

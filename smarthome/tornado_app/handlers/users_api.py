@@ -1,5 +1,5 @@
 """
-API REST pour la gestion des utilisateurs
+REST API for user management.
 """
 import json
 import tornado.web
@@ -12,7 +12,7 @@ import os
 
 
 class BaseAPIHandler(tornado.web.RequestHandler):
-    """Base handler pour les API REST."""
+    """Base handler for REST APIs."""
     
     # Set to True in subclasses that don't require authentication
     # (e.g., login, register endpoints)
@@ -87,7 +87,7 @@ class BaseAPIHandler(tornado.web.RequestHandler):
 
 
 class RegisterAPIHandler(BaseAPIHandler):
-    """POST /api/auth/register - Inscription d'un utilisateur"""
+    """POST /api/auth/register - User registration."""
     SKIP_AUTH_CHECK = True
 
     async def post(self):
@@ -120,7 +120,7 @@ class RegisterAPIHandler(BaseAPIHandler):
                     "Username or email already exists", 409
                 )
 
-            # Create le nouvel utilisateur
+            # Create new user
             hashed_pw = hash_password(password)
             new_user = User(
                 username=username,

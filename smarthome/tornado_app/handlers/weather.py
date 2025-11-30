@@ -1,5 +1,5 @@
 """
-Handler API pour la météo
+API handler for weather service.
 """
 import json
 import re
@@ -12,10 +12,10 @@ from .base import BaseAPIHandler
 
 
 class WeatherHandler(BaseAPIHandler):
-    """GET /api/weather/{house_id} - Obtenir la météo pour une maison"""
+    """GET /api/weather/{house_id} - Get weather for a house."""
 
     async def get(self, house_id):
-        """Récupérer la météo basée sur l'adresse de la maison"""
+        """Get weather based on house address."""
         async with async_session_maker() as session:
             # Retrieve la maison
             house = await session.get(House, int(house_id))
@@ -30,15 +30,15 @@ class WeatherHandler(BaseAPIHandler):
                 )
                 return
             
-            # Extraire le nom de la ville de l'adresse
+            # Extract city name from address
             # Ex: "Campus, 97157 Pointe-à-Pitre, Guadeloupe"
             # -> "Pointe-à-Pitre"
             address_parts = house.address.split(',')
             # By default, use the complete address
             city_name = house.address
             
-            # Chercher la partie contenant une ville
-            # (généralement avant le pays)
+            # Find the part containing a city
+            # (usually before country)
             if len(address_parts) >= 2:
                 # Take the second-to-last part
                 if len(address_parts) >= 2:
@@ -69,7 +69,7 @@ class WeatherHandler(BaseAPIHandler):
                 )
                 return
             
-            # Add la localisation
+            # Add location
             weather["location"] = {
                 "city": coords.get("name", ""),
                 "admin1": coords.get("admin1", ""),
@@ -82,10 +82,10 @@ class WeatherHandler(BaseAPIHandler):
 
 
 class ValidateAddressHandler(BaseAPIHandler):
-    """POST /api/weather/validate-address - Valider une adresse"""
+    """POST /api/weather/validate-address - Validate an address."""
 
     async def post(self):
-        """Vérifier si une adresse peut être géolocalisée"""
+        """Check if an address can be geolocated."""
         try:
             data = json.loads(self.request.body)
             address = data.get('address', '').strip()
@@ -94,7 +94,7 @@ class ValidateAddressHandler(BaseAPIHandler):
                 self.write_error_json("Address is required", 400)
                 return
             
-            # Extraire le nom de la ville de l'adresse
+            # Extract city name from address
             address_parts = address.split(',')
             city_name = address
             
