@@ -168,7 +168,6 @@ smarthome/
 │
 ├── static/                            # Frontend assets
 │   ├── main.css                       # CSS principal
-│   ├── main-pro.css                   # CSS optimisé
 │   │
 │   ├── app/                           # Single Page Components
 │   │   ├── login.html                 # Page connexion

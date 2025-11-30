@@ -81,7 +81,7 @@ Gérez vos maisons, pièces, capteurs et équipements intelligents depuis une in
 | **Frontend** | Vanilla JavaScript | ES6+ |
 | **Styles** | CSS3 (Grid, Flexbox) | - |
 | **Auth** | Cookies sécurisés | HTTPOnly |
-| **Hash** | PBKDF2-SHA256 | - |
+| **Hash** | bcrypt | Auto-salted |
 
 ### Architecture SPA
 
@@ -153,8 +153,10 @@ smarthome/
 │   └── 002_add_sensors_equipments.sql
 ├── .env                            # Variables d'environnement
 ├── requirements.txt                # Dépendances Python
-├── ARCHITECTURE_REST.md            # Documentation architecture REST
-├── MIGRATION_PLAN.md               # Plan de migration
+├── API_DOCUMENTATION.md            # Documentation complète API REST (50+ endpoints)
+├── ARCHITECTURE.md                 # Architecture technique et diagrammes
+├── DEMONSTRATION_GUIDE.md          # Guide de démonstration académique
+├── PROJECT_REQUIREMENTS.md         # Conformité aux exigences (35/35 points)
 └── README.md                       # Ce fichier
 ```
 
@@ -302,9 +304,9 @@ Server starting on http://127.0.0.1:8001
 
 ### Vue d'ensemble
 
-L'API REST complète est documentée dans **[ARCHITECTURE_REST.md](ARCHITECTURE_REST.md)**.
+L'API REST complète est documentée dans **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)**.
 
-**Endpoints principaux** : 27 au total
+**Endpoints principaux** : 50+ au total
 
 | Catégorie | Endpoints | Fichier |
 |-----------|-----------|---------|
@@ -345,7 +347,7 @@ curl -X POST http://localhost:8001/api/houses \
 curl -X POST http://localhost:8001/api/automation/trigger -b cookies.txt
 ```
 
-> 📚 Consultez **[ARCHITECTURE_REST.md](ARCHITECTURE_REST.md)** pour la liste complète des endpoints avec exemples.
+> 📚 Consultez **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** pour la liste complète des 50+ endpoints avec exemples détaillés.
 
 ---
 
@@ -392,14 +394,19 @@ Ouvrir http://localhost:8089
 
 ---
 
-## 🗺️ Plan de migration
+## ✅ Fonctionnalités implémentées
 
-Consultez **[MIGRATION_PLAN.md](MIGRATION_PLAN.md)** pour les fonctionnalités à venir :
-
-### Phase 2 : Fonctionnalités avancées
-- ⚠️ **API Membres** : Invitation, rôles (admin/occupant/guest)
-- ⚠️ **API Historique** : Journalisation automatique des événements
-- ⚠️ **Notifications temps réel** : WebSockets
+### Phase 1 : Fonctionnalités de base ✅
+- ✅ **API Utilisateurs** : Inscription, connexion, profil
+- ✅ **API Maisons** : CRUD complet, pièces, visualisation grille
+- ✅ **API Capteurs** : Création, lecture, mise à jour
+- ✅ **API Équipements** : CRUD, contrôle état
+- ✅ **API Automatisation** : Règles conditionnelles, déclenchement
+- ✅ **API Membres** : Invitation, gestion rôles (admin/occupant/guest)
+- ✅ **API Historique** : Journalisation automatique des événements
+- ✅ **API Météo** : Intégration Open-Meteo
+- ✅ **WebSockets** : Notifications temps réel
+- ✅ **Géolocalisation** : Tracking positions utilisateurs
 - ⚠️ **PWA** : Mode offline
 
 ### Phase 3 : Tests et production
@@ -417,7 +424,7 @@ Consultez **[MIGRATION_PLAN.md](MIGRATION_PLAN.md)** pour les fonctionnalités �
 - **Tornado** : Framework web asynchrone haute performance
 - **SQLAlchemy 2.0** : ORM moderne avec support async/await
 - **asyncpg** : Driver PostgreSQL asynchrone (le plus rapide)
-- **PBKDF2-SHA256** : Hachage de mots de passe sécurisé
+- **bcrypt** : Hachage de mots de passe sécurisé avec salage automatique
 
 ### Frontend
 - **Vanilla JavaScript** : ES6+, Fetch API, async/await
@@ -431,7 +438,7 @@ Consultez **[MIGRATION_PLAN.md](MIGRATION_PLAN.md)** pour les fonctionnalités �
 
 ### Sécurité
 - 🔒 **Cookies HTTPOnly** : Protection XSS
-- 🔒 **PBKDF2** : 260 000 itérations
+- 🔒 **bcrypt** : Hachage adaptatif avec salage automatique
 - 🔒 **XSRF désactivé** : Pour API REST stateless
 - 🔒 **Validation propriété** : Toutes ressources vérifiées par user_id
 
