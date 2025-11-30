@@ -41,6 +41,7 @@ class BaseAPIHandler(tornado.web.RequestHandler):
 
 class LoginJWTHandler(BaseAPIHandler):
     """POST /api/auth/jwt/login - Login with JWT token response."""
+    SKIP_AUTH_CHECK = True
 
     async def post(self):
         try:
@@ -94,6 +95,7 @@ class LoginJWTHandler(BaseAPIHandler):
 
 class RegisterJWTHandler(BaseAPIHandler):
     """POST /api/auth/jwt/register - Register with JWT token response."""
+    SKIP_AUTH_CHECK = True
 
     async def post(self):
         try:

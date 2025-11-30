@@ -13,6 +13,10 @@ import os
 
 class BaseAPIHandler(tornado.web.RequestHandler):
     """Base handler pour les API REST."""
+    
+    # Set to True in subclasses that don't require authentication
+    # (e.g., login, register endpoints)
+    SKIP_AUTH_CHECK = False
 
     def check_xsrf_cookie(self):
         """Disable XSRF for REST APIs."""
@@ -29,6 +33,24 @@ class BaseAPIHandler(tornado.web.RequestHandler):
     def options(self, *args):
         self.set_status(204)
         self.finish()
+    
+    def prepare(self):
+        """Called before each request - enforce authentication."""
+        # Skip auth check for OPTIONS requests (CORS preflight)
+        if self.request.method == "OPTIONS":
+            return
+        
+        # Skip auth check if handler explicitly allows it
+        if self.SKIP_AUTH_CHECK:
+            return
+        
+        # Verify authentication
+        user = self.get_current_user()
+        if not user:
+            self.set_status(401)
+            self.write(json.dumps({"error": "Authentication required"}))
+            self.finish()
+            return
 
     def get_current_user(self):
         """Get current user from JWT token or cookie fallback."""
@@ -66,6 +88,7 @@ class BaseAPIHandler(tornado.web.RequestHandler):
 
 class RegisterAPIHandler(BaseAPIHandler):
     """POST /api/auth/register - Inscription d'un utilisateur"""
+    SKIP_AUTH_CHECK = True
 
     async def post(self):
         try:
@@ -132,6 +155,7 @@ class RegisterAPIHandler(BaseAPIHandler):
 
 class LoginAPIHandler(BaseAPIHandler):
     """POST /api/auth/login - Connexion d'un utilisateur"""
+    SKIP_AUTH_CHECK = True
 
     async def post(self):
         try:

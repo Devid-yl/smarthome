@@ -53,7 +53,7 @@ class RedirectHandler(tornado.web.RequestHandler):
 class NotFoundHandler(tornado.web.RequestHandler):
     """Handles 404 errors by redirecting to home"""
     def prepare(self):
-        self.redirect("http://127.0.0.1:8001/", permanent=False)
+        self.redirect("http://10.192.138.9:8001/", permanent=False)
 
 
 def make_app():

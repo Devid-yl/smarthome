@@ -4,34 +4,8 @@ from sqlalchemy import select
 from ..models import Equipment, EventHistory
 from ..database import async_session_maker
 from datetime import datetime
+from .base import BaseAPIHandler
 
-
-class BaseAPIHandler(tornado.web.RequestHandler):
-    """Base handler pour les API REST."""
-
-    def check_xsrf_cookie(self):
-        """Disable XSRF for REST APIs."""
-        pass
-
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Methods",
-                        "GET, POST, PUT, DELETE, OPTIONS")
-        self.set_header("Access-Control-Allow-Headers",
-                        "Content-Type")
-
-    def options(self, *args):
-        self.set_status(204)
-        self.finish()
-
-    def write_json(self, data, status=200):
-        self.set_status(status)
-        self.write(json.dumps(data, default=str))
-
-    def write_error_json(self, message, status=400):
-        self.set_status(status)
-        self.write(json.dumps({"error": message}))
 
 
 class EquipmentsListHandler(BaseAPIHandler):

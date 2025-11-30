@@ -147,9 +147,9 @@
             color: var(--text-main); 
             border: 1px solid var(--border-color);
         }
-        
+
         .btn-secondary:hover {
-            background: #4b5563;
+            background: #f9fafb;
         }
         
         .modal {

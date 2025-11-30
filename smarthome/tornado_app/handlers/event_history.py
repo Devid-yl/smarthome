@@ -5,6 +5,7 @@ from sqlalchemy import select, and_, desc
 from sqlalchemy.orm import selectinload
 from ..models import EventHistory, House, HouseMember, User
 from ..database import async_session_maker
+from .base import BaseAPIHandler
 
 
 class BaseAPIHandler(tornado.web.RequestHandler):

@@ -8,6 +8,7 @@ from ..database import async_session_maker
 from ..models import UserPosition, House, User, Sensor, Room, AutomationRule
 from ..utils.permissions import get_user_house_permission, PermissionLevel
 from .websocket import RealtimeHandler
+from .base import BaseAPIHandler
 
 
 class BaseAPIHandler(tornado.web.RequestHandler):
