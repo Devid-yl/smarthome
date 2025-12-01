@@ -19,6 +19,7 @@ class SensorsListHandler(BaseAPIHandler):
         room_id = self.get_argument("room_id", None)
         house_id = self.get_argument("house_id", None)
 
+        # DATABASE QUERY: Récupérer tous les capteurs (optionnel: filtrés par room_id ou house_id)
         async with async_session_maker() as session:
             query = select(Sensor)
             if room_id:
@@ -65,6 +66,7 @@ class SensorsListHandler(BaseAPIHandler):
             self.write_error_json(f"Invalid sensor type. Must be one of: {valid_types}")
             return
 
+        # DATABASE QUERY: Créer un nouveau capteur et enregistrer dans l'historique
         async with async_session_maker() as session:
             new_sensor = Sensor(
                 house_id=data["house_id"],
@@ -133,6 +135,7 @@ class SensorDetailHandler(BaseAPIHandler):
 
     async def get(self, sensor_id):
         """Get sensor details."""
+        # DATABASE QUERY: Récupérer les détails d'un capteur spécifique par ID
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Sensor).where(Sensor.id == int(sensor_id))
@@ -167,6 +170,7 @@ class SensorDetailHandler(BaseAPIHandler):
             self.write_error_json("Invalid JSON")
             return
 
+        # DATABASE QUERY: Mettre à jour un capteur (value, is_active, name, unit)
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Sensor).where(Sensor.id == int(sensor_id))
@@ -237,6 +241,7 @@ class SensorDetailHandler(BaseAPIHandler):
 
             await session.commit()
 
+            # WEBSOCKET BROADCAST: Diffuser la mise à jour de capteur à tous les clients connectés
             # Diffuser la mise à jour en temps réel via WebSocket
             if "value" in changes or "is_active" in changes:
                 RealtimeHandler.broadcast_sensor_update(
@@ -258,6 +263,7 @@ class SensorDetailHandler(BaseAPIHandler):
 
     async def delete(self, sensor_id):
         """Supprimer un capteur"""
+        # DATABASE QUERY: Supprimer un capteur et enregistrer dans l'historique
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Sensor).where(Sensor.id == int(sensor_id))
@@ -308,6 +314,7 @@ class SensorValueHandler(BaseAPIHandler):
             self.write_error_json("Missing 'value' field")
             return
 
+        # DATABASE QUERY: Mettre à jour uniquement la valeur d'un capteur (endpoint rapide)
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Sensor).where(Sensor.id == int(sensor_id))
@@ -348,6 +355,7 @@ class SensorValueHandler(BaseAPIHandler):
 
             await session.commit()
 
+            # WEBSOCKET BROADCAST: Diffuser la nouvelle valeur du capteur à tous les clients
             # Diffuser la mise à jour en temps réel via WebSocket
             RealtimeHandler.broadcast_sensor_update(
                 sensor.id, sensor.value, sensor.is_active, sensor.house_id

@@ -23,6 +23,7 @@ class HouseMembersHandler(BaseAPIHandler):
         house_id = int(house_id)
         user_id = current_user["id"]
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Check that the user has access to this house
             house = await session.get(House, house_id)
@@ -109,6 +110,7 @@ class HouseMembersHandler(BaseAPIHandler):
                 self.write({"error": "Invalid role"})
                 return
 
+            # DATABASE QUERY: Opération sur la base de données
             async with async_session_maker() as session:
                 # Check that la maison existe
                 house = await session.get(House, house_id)
@@ -248,6 +250,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
             new_role = data.get("role")
             new_status = data.get("status")
 
+            # DATABASE QUERY: Opération sur la base de données
             async with async_session_maker() as session:
                 # Retrieve le membre
                 member = await session.get(HouseMember, member_id)
@@ -365,6 +368,7 @@ class HouseMemberDetailHandler(BaseAPIHandler):
         member_id = int(member_id)
         user_id = current_user["id"]
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Retrieve le membre
             member = await session.get(HouseMember, member_id)
@@ -444,6 +448,7 @@ class MyInvitationsHandler(BaseAPIHandler):
 
         user_id = current_user["id"]
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             query = (
                 select(HouseMember)
@@ -504,6 +509,7 @@ class SearchUsersHandler(BaseAPIHandler):
             self.write({"error": "Minimum 2 characters required"})
             return
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Rechercher les utilisateurs dont le username contient
             # le terme (insensible à la casse)
@@ -555,6 +561,7 @@ class SearchHousesHandler(BaseAPIHandler):
             self.write({"error": "Minimum 2 characters required"})
             return
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Rechercher les maisons dont le nom contient le terme
             query = (
@@ -616,6 +623,7 @@ class RequestHouseAccessHandler(BaseAPIHandler):
             data = json.loads(self.request.body)
             message = data.get("message", "")
 
+            # DATABASE QUERY: Opération sur la base de données
             async with async_session_maker() as session:
                 # Check that la maison existe
                 house = await session.get(House, house_id)

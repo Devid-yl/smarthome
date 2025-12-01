@@ -26,6 +26,7 @@ class AutomationRulesHandler(BaseAPIHandler):
         """
         actions_taken = []
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             from ..models import AutomationRule
 
@@ -114,6 +115,7 @@ class AutomationRulesHandler(BaseAPIHandler):
                             # Broadcast equipment update via WebSocket
                             from .websocket import RealtimeHandler
 
+                            # WEBSOCKET BROADCAST: Diffusion temps réel aux clients WebSocket
                             RealtimeHandler.broadcast_equipment_update(
                                 equipment.id,
                                 equipment.type,
@@ -139,6 +141,7 @@ class PresenceHandler(BaseAPIHandler):
 
     async def get(self):
         """Récupérer l'état de tous les capteurs de présence"""
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Sensor).where(Sensor.type == "presence")
@@ -168,6 +171,7 @@ class SensorToEquipmentStatusHandler(BaseAPIHandler):
 
     async def get(self):
         """Récupérer l'état global du système (capteurs + équipements)"""
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Capteurs
             result = await session.execute(

@@ -24,6 +24,7 @@ class AutomationRulesListHandler(BaseAPIHandler):
             self.write_error_json("house_id requis", 400)
             return
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(
                 select(AutomationRule)
@@ -95,6 +96,7 @@ class AutomationRulesListHandler(BaseAPIHandler):
                 self.write_error_json(f"Champ requis: {field}", 400)
                 return
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             try:
                 # Convertir les IDs en entiers
@@ -152,6 +154,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
 
     async def get(self, rule_id):
         """Récupérer les détails d'une règle"""
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(
                 select(AutomationRule)
@@ -199,6 +202,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
             self.write_error_json("Invalid JSON", 400)
             return
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             rule = await session.get(AutomationRule, int(rule_id))
 
@@ -236,6 +240,7 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
 
     async def delete(self, rule_id):
         """Supprimer une règle"""
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             rule = await session.get(AutomationRule, int(rule_id))
 

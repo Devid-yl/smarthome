@@ -18,6 +18,7 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
             self.redirect("/app/login.html")
             return
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(
                 select(House)
@@ -41,6 +42,7 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
 
         grid_data = self.get_argument("grid", "[]")
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(
                 select(House).where(House.id == int(house_id), House.user_id == user_id)

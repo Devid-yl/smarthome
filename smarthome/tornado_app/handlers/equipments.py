@@ -19,6 +19,7 @@ class EquipmentsListHandler(BaseAPIHandler):
         house_id = self.get_argument("house_id", None)
         equipment_type = self.get_argument("type", None)
 
+        # DATABASE QUERY: Récupérer tous les équipements (optionnel: filtrés par room/house/type)
         async with async_session_maker() as session:
             query = select(Equipment)
             if room_id:
@@ -67,6 +68,7 @@ class EquipmentsListHandler(BaseAPIHandler):
             self.write_error_json(f"Invalid equipment type. Must be: {valid_types}")
             return
 
+        # DATABASE QUERY: Créer un nouvel équipement et enregistrer dans l'historique
         async with async_session_maker() as session:
             new_equipment = Equipment(
                 house_id=int(data["house_id"]),
@@ -126,6 +128,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
 
     async def get(self, equipment_id):
         """Get equipment details."""
+        # DATABASE QUERY: Récupérer les détails d'un équipement spécifique par ID
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.id == int(equipment_id))
@@ -168,6 +171,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
             self.write_error_json("Invalid JSON")
             return
 
+        # DATABASE QUERY: Mettre à jour un équipement avec vérification des permissions
         async with async_session_maker() as session:
             from ..utils.permissions import can_control_equipment
 
@@ -247,6 +251,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
 
             await session.commit()
 
+            # WEBSOCKET BROADCAST: Diffuser la mise à jour d'équipement à tous les clients connectés
             # Diffuser la mise à jour en temps réel via WebSocket
             print(
                 f"[Equipment] Modification détectée: ID={equipment.id}, "
@@ -279,6 +284,7 @@ class EquipmentDetailHandler(BaseAPIHandler):
 
     async def delete(self, equipment_id):
         """Supprimer un équipement"""
+        # DATABASE QUERY: Supprimer un équipement et enregistrer dans l'historique
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.id == int(equipment_id))
@@ -324,6 +330,7 @@ class ShuttersHandler(BaseAPIHandler):
 
     async def get(self):
         """Liste tous les volets"""
+        # DATABASE QUERY: Récupérer tous les équipements de type volet (shutter)
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "shutter")
@@ -357,6 +364,7 @@ class ShuttersHandler(BaseAPIHandler):
             self.write_error_json("Missing 'state' field")
             return
 
+        # DATABASE QUERY: Mettre à jour l'état de tous les volets simultanément
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "shutter")
@@ -382,6 +390,7 @@ class DoorsHandler(BaseAPIHandler):
 
     async def get(self):
         """Liste toutes les portes"""
+        # DATABASE QUERY: Récupérer tous les équipements de type porte (door)
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "door")
@@ -415,6 +424,7 @@ class DoorsHandler(BaseAPIHandler):
             self.write_error_json("Missing 'state' field")
             return
 
+        # DATABASE QUERY: Mettre à jour l'état de toutes les portes simultanément
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "door")
@@ -437,6 +447,7 @@ class LightsHandler(BaseAPIHandler):
 
     async def get(self):
         """Liste toutes les lumières"""
+        # DATABASE QUERY: Récupérer tous les équipements de type lumière (light)
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "light")
@@ -470,6 +481,7 @@ class LightsHandler(BaseAPIHandler):
             self.write_error_json("Missing 'state' field")
             return
 
+        # DATABASE QUERY: Mettre à jour l'état de toutes les lumières simultanément
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "light")
@@ -492,6 +504,7 @@ class SoundSystemHandler(BaseAPIHandler):
 
     async def get(self):
         """Liste tous les systèmes sonores"""
+        # DATABASE QUERY: Récupérer tous les équipements de type système sonore (sound_system)
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "sound_system")
@@ -525,6 +538,7 @@ class SoundSystemHandler(BaseAPIHandler):
             self.write_error_json("Missing 'state' field")
             return
 
+        # DATABASE QUERY: Mettre à jour l'état de tous les systèmes sonores simultanément
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Equipment).where(Equipment.type == "sound_system")

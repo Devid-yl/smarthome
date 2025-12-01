@@ -23,6 +23,7 @@ class UserPositionHandler(BaseAPIHandler):
         user_id = int(user_id_cookie.decode())
         house_id = int(house_id)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Verify user is member of house
             perm = await get_user_house_permission(session, user_id, house_id)
@@ -67,6 +68,7 @@ class UserPositionHandler(BaseAPIHandler):
         user_id = int(user_id_cookie.decode())
         house_id = int(house_id)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Verify user is member of house
             perm = await get_user_house_permission(session, user_id, house_id)
@@ -177,6 +179,7 @@ class UserPositionHandler(BaseAPIHandler):
         user_id = int(user_id_cookie.decode())
         house_id = int(house_id)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Verify user is member of house
             perm = await get_user_house_permission(session, user_id, house_id)
@@ -280,6 +283,7 @@ class UserPositionHandler(BaseAPIHandler):
                     )
 
                     # Broadcaster la mise à jour du capteur via WebSocket
+                    # WEBSOCKET BROADCAST: Diffusion temps réel aux clients WebSocket
                     RealtimeHandler.broadcast_sensor_update(
                         sensor.id, sensor.value, sensor.is_active, sensor.house_id
                     )
@@ -355,6 +359,7 @@ class UserPositionHandler(BaseAPIHandler):
                     )
 
                     # Broadcaster
+                    # WEBSOCKET BROADCAST: Diffusion temps réel aux clients WebSocket
                     RealtimeHandler.broadcast_sensor_update(
                         sensor.id, sensor.value, sensor.is_active, sensor.house_id
                     )
@@ -441,6 +446,7 @@ class UserPositionHandler(BaseAPIHandler):
                         session.add(event)
 
                         # Broadcaster la mise à jour de l'équipement
+                        # WEBSOCKET BROADCAST: Diffusion temps réel aux clients WebSocket
                         RealtimeHandler.broadcast_equipment_update(
                             equipment.id,
                             equipment.type,

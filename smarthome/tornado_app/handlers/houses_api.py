@@ -21,6 +21,7 @@ class HousesAPIHandler(BaseAPIHandler):
         if not current_user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Récupérer les maisons possédées et partagées de l'utilisateur
         async with async_session_maker() as session:
             from sqlalchemy import and_
             from ..models import HouseMember
@@ -117,6 +118,7 @@ class HousesAPIHandler(BaseAPIHandler):
                 "Length and width must be between 1 and 50", 400
             )
 
+        # DATABASE QUERY: Créer une nouvelle maison avec grille et enregistrer dans l'historique
         async with async_session_maker() as session:
             # Create a grid with automatic wall borders
             # Actual grid: (length+2) x (width+2) for borders
@@ -186,6 +188,7 @@ class HouseDetailAPIHandler(BaseAPIHandler):
         if not current_user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Récupérer les détails d'une maison avec vérification des permissions
         async with async_session_maker() as session:
             from ..utils.permissions import can_view_house, get_user_role_in_house
 
@@ -236,6 +239,7 @@ class HouseDetailAPIHandler(BaseAPIHandler):
         except json.JSONDecodeError:
             return self.write_error_json("Invalid JSON", 400)
 
+        # DATABASE QUERY: Mettre à jour les informations d'une maison avec vérification des permissions
         async with async_session_maker() as session:
             from ..utils.permissions import can_manage_house
 
@@ -303,6 +307,7 @@ class HouseDetailAPIHandler(BaseAPIHandler):
         if not current_user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Supprimer une maison et toutes ses dépendances (cascade)
         async with async_session_maker() as session:
             try:
                 result = await session.execute(
@@ -339,6 +344,7 @@ class RoomsAPIHandler(BaseAPIHandler):
         if not current_user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Récupérer toutes les pièces d'une maison spécifique
         async with async_session_maker() as session:
             # Check that la maison appartient à l'utilisateur
             result = await session.execute(
@@ -380,6 +386,7 @@ class RoomsAPIHandler(BaseAPIHandler):
         if not name:
             return self.write_error_json("Room name is required", 400)
 
+        # DATABASE QUERY: Créer une nouvelle pièce et enregistrer dans l'historique
         async with async_session_maker() as session:
             # Check that la maison appartient à l'utilisateur
             result = await session.execute(
@@ -436,6 +443,7 @@ class RoomDetailAPIHandler(BaseAPIHandler):
         if not current_user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Récupérer les détails d'une pièce spécifique
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Room)
@@ -461,6 +469,7 @@ class RoomDetailAPIHandler(BaseAPIHandler):
         except json.JSONDecodeError:
             return self.write_error_json("Invalid JSON", 400)
 
+        # DATABASE QUERY: Mettre à jour le nom d'une pièce et enregistrer dans l'historique
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Room)
@@ -512,6 +521,7 @@ class RoomDetailAPIHandler(BaseAPIHandler):
         if not current_user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Supprimer une pièce et enregistrer dans l'historique
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Room)

@@ -38,6 +38,7 @@ class EventHistoryHandler(BaseAPIHandler):
         days = self.get_argument("days", None)
         filter_user_id = self.get_argument("user_id", None)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Vérifier l'accès à la maison
             house = await session.get(House, house_id)
@@ -175,6 +176,7 @@ class EventCleanupHandler(BaseAPIHandler):
         house_id = int(house_id)
         user_id = current_user["id"]
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Vérifier que l'utilisateur est propriétaire
             house = await session.get(House, house_id)
@@ -214,6 +216,7 @@ class EventStatsHandler(BaseAPIHandler):
         user_id = current_user["id"]
         days = int(self.get_argument("days", "7"))
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Vérifier l'accès
             house = await session.get(House, house_id)

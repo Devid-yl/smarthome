@@ -105,6 +105,7 @@ class RegisterAPIHandler(BaseAPIHandler):
                 "Username, email and password are required", 400
             )
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Check if user already exists
             result = await session.execute(
@@ -168,6 +169,7 @@ class LoginAPIHandler(BaseAPIHandler):
         if not username or not password:
             return self.write_error_json("Username and password are required", 400)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(
                 select(User).where(User.username == username)
@@ -212,6 +214,7 @@ class CurrentUserAPIHandler(BaseAPIHandler):
         if not user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(select(User).where(User.id == user["id"]))
             db_user = result.scalar_one_or_none()
@@ -246,6 +249,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
         if not current_user:
             return self.write_error_json("Not authenticated", 401)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()
@@ -290,6 +294,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
         except json.JSONDecodeError:
             return self.write_error_json("Invalid JSON", 400)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()
@@ -331,6 +336,7 @@ class UserProfileAPIHandler(BaseAPIHandler):
         if current_user["id"] != int(user_id):
             return self.write_error_json("Unauthorized", 403)
 
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()
@@ -387,6 +393,7 @@ class UploadProfileImageHandler(BaseAPIHandler):
             f.write(content)
 
         # Mettre à jour la DB
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             result = await session.execute(select(User).where(User.id == int(user_id)))
             user = result.scalar_one_or_none()

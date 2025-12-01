@@ -15,6 +15,7 @@ class WeatherHandler(BaseAPIHandler):
 
     async def get(self, house_id):
         """Get weather based on house address."""
+        # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
             # Retrieve la maison
             house = await session.get(House, int(house_id))
