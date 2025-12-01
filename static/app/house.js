@@ -146,7 +146,7 @@ async function loadHouse() {
 
 // Appliquer les permissions d'affichage selon le rôle
 function applyPermissions() {
-    const isAdmin = userRole === 'proprietaire' || userRole === 'admin';
+    const isAdmin = userRole === 'proprietaire' || userRole === 'administrateur';
     
     // Masquer les boutons de modification/suppression pour les non-admin
     const editBtn = document.getElementById('edit-house-btn');
@@ -453,7 +453,7 @@ async function loadSensors() {
 // Afficher les capteurs
 function displaySensors() {
     const grid = document.getElementById('sensors-grid');
-    const isAdmin = userRole === 'proprietaire' || userRole === 'admin';
+    const isAdmin = userRole === 'proprietaire' || userRole === 'administrateur';
     
     if (sensors.length === 0) {
         grid.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">Aucun capteur. Ajoutez-en un !</p>';
@@ -545,7 +545,7 @@ async function loadEquipments() {
 // Afficher les équipements
 function displayEquipments() {
     const grid = document.getElementById('equipments-grid');
-    const isAdmin = userRole === 'proprietaire' || userRole === 'admin';
+    const isAdmin = userRole === 'proprietaire' || userRole === 'administrateur';
     
     if (equipments.length === 0) {
         grid.innerHTML = '<p style="color: var(--text-muted); padding: 1rem;">Aucun équipement. Ajoutez-en un !</p>';
@@ -1540,7 +1540,7 @@ async function loadAutomationRules() {
 // Afficher les règles d'automatisation
 function displayAutomationRules() {
     const grid = document.getElementById('automation-rules-grid');
-    const isAdmin = userRole === 'proprietaire' || userRole === 'admin';
+    const isAdmin = userRole === 'proprietaire' || userRole === 'administrateur';
     
     if (!grid) return;
     

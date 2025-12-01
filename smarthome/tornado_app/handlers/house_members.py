@@ -6,6 +6,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.orm import selectinload
 from ..models import HouseMember, House, User, EventHistory
 from ..database import async_session_maker
+from ..utils.permissions import can_manage_house
 from .base import BaseAPIHandler
 
 
@@ -32,8 +33,7 @@ class HouseMembersHandler(BaseAPIHandler):
                 self.write({"error": "House not found"})
                 return
 
-            # Check that the user is owner or member
-            is_owner = house.user_id == user_id
+            # Check that the user is owner, admin, or member
             member_query = select(HouseMember).where(
                 and_(
                     HouseMember.house_id == house_id,
@@ -44,7 +44,7 @@ class HouseMembersHandler(BaseAPIHandler):
             member_result = await session.execute(member_query)
             is_member = member_result.scalar_one_or_none() is not None
 
-            if not is_owner and not is_member:
+            if not await can_manage_house(session, user_id, house_id) and not is_member:
                 self.set_status(403)
                 self.write({"error": "Access denied"})
                 return
@@ -120,24 +120,12 @@ class HouseMembersHandler(BaseAPIHandler):
                     return
 
                 # Check that the inviter is owner or admin
-                is_owner = house.user_id == user_id
-                if not is_owner:
-                    member_query = select(HouseMember).where(
-                        and_(
-                            HouseMember.house_id == house_id,
-                            HouseMember.user_id == user_id,
-                            HouseMember.role == "administrateur",
-                            HouseMember.status == "accepted",
-                        )
+                if not await can_manage_house(session, user_id, house_id):
+                    self.set_status(403)
+                    self.write(
+                        {"error": "Only owners and administrators can invite"}
                     )
-                    member_result = await session.execute(member_query)
-                    is_admin = member_result.scalar_one_or_none() is not None
-                    if not is_admin:
-                        self.set_status(403)
-                        self.write(
-                            {"error": "Only owners and administrators can invite"}
-                        )
-                        return
+                    return
 
                 # Find the user to invite by username
                 user_query = select(User).where(User.username == invited_username)
@@ -259,8 +247,6 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                     self.write({"error": "Member not found"})
                     return
 
-                house = await session.get(House, house_id)
-
                 # Case 1: Accept/reject an invitation (invited user)
                 if new_status and member.user_id == user_id:
                     if new_status not in ["accepted", "rejected"]:
@@ -304,22 +290,10 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                         return
 
                     # Vérifier les permissions
-                    is_owner = house.user_id == user_id
-                    if not is_owner:
-                        admin_query = select(HouseMember).where(
-                            and_(
-                                HouseMember.house_id == house_id,
-                                HouseMember.user_id == user_id,
-                                HouseMember.role == "administrateur",
-                                HouseMember.status == "accepted",
-                            )
-                        )
-                        admin_result = await session.execute(admin_query)
-                        is_admin = admin_result.scalar_one_or_none() is not None
-                        if not is_admin:
-                            self.set_status(403)
-                            self.write({"error": "Permission denied"})
-                            return
+                    if not await can_manage_house(session, user_id, house_id):
+                        self.set_status(403)
+                        self.write({"error": "Permission denied"})
+                        return
 
                     old_role = member.role
                     member.role = new_role
@@ -389,22 +363,10 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                     return
             # Case 2: Admin or owner removes someone
             else:
-                is_owner = house.user_id == user_id
-                if not is_owner:
-                    admin_query = select(HouseMember).where(
-                        and_(
-                            HouseMember.house_id == house_id,
-                            HouseMember.user_id == user_id,
-                            HouseMember.role == "administrateur",
-                            HouseMember.status == "accepted",
-                        )
-                    )
-                    admin_result = await session.execute(admin_query)
-                    is_admin = admin_result.scalar_one_or_none() is not None
-                    if not is_admin:
-                        self.set_status(403)
-                        self.write({"error": "Permission denied"})
-                        return
+                if not await can_manage_house(session, user_id, house_id):
+                    self.set_status(403)
+                    self.write({"error": "Permission denied"})
+                    return
 
             # Enregistrer dans l'historique avant suppression
             user_query = select(User).where(User.id == member.user_id)

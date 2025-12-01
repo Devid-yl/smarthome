@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from ..models import House, Room, EventHistory
 from ..database import async_session_maker
+from ..utils.permissions import can_manage_house
 from .base import BaseAPIHandler
 
 
@@ -346,11 +347,12 @@ class RoomsAPIHandler(BaseAPIHandler):
 
         # DATABASE QUERY: Récupérer toutes les pièces d'une maison spécifique
         async with async_session_maker() as session:
-            # Check that la maison appartient à l'utilisateur
+            # Check that l'utilisateur peut gérer la maison
+            if not await can_manage_house(session, current_user["id"], int(house_id)):
+                return self.write_error_json("House not found", 404)
+
             result = await session.execute(
-                select(House).where(
-                    House.id == int(house_id), House.user_id == current_user["id"]
-                )
+                select(House).where(House.id == int(house_id))
             )
             house = result.scalar_one_or_none()
 
@@ -388,11 +390,12 @@ class RoomsAPIHandler(BaseAPIHandler):
 
         # DATABASE QUERY: Créer une nouvelle pièce et enregistrer dans l'historique
         async with async_session_maker() as session:
-            # Check that la maison appartient à l'utilisateur
+            # Check that l'utilisateur peut gérer la maison
+            if not await can_manage_house(session, current_user["id"], int(house_id)):
+                return self.write_error_json("House not found", 404)
+
             result = await session.execute(
-                select(House).where(
-                    House.id == int(house_id), House.user_id == current_user["id"]
-                )
+                select(House).where(House.id == int(house_id))
             )
             house = result.scalar_one_or_none()
 
@@ -446,13 +449,14 @@ class RoomDetailAPIHandler(BaseAPIHandler):
         # DATABASE QUERY: Récupérer les détails d'une pièce spécifique
         async with async_session_maker() as session:
             result = await session.execute(
-                select(Room)
-                .join(House)
-                .where(Room.id == int(room_id), House.user_id == current_user["id"])
+                select(Room).join(House).where(Room.id == int(room_id))
             )
             room = result.scalar_one_or_none()
 
             if not room:
+                return self.write_error_json("Room not found", 404)
+
+            if not await can_manage_house(session, current_user["id"], room.house_id):
                 return self.write_error_json("Room not found", 404)
 
             self.write_json(
@@ -472,13 +476,14 @@ class RoomDetailAPIHandler(BaseAPIHandler):
         # DATABASE QUERY: Mettre à jour le nom d'une pièce et enregistrer dans l'historique
         async with async_session_maker() as session:
             result = await session.execute(
-                select(Room)
-                .join(House)
-                .where(Room.id == int(room_id), House.user_id == current_user["id"])
+                select(Room).join(House).where(Room.id == int(room_id))
             )
             room = result.scalar_one_or_none()
 
             if not room:
+                return self.write_error_json("Room not found", 404)
+
+            if not await can_manage_house(session, current_user["id"], room.house_id):
                 return self.write_error_json("Room not found", 404)
 
             # Suivre les changements
@@ -524,13 +529,14 @@ class RoomDetailAPIHandler(BaseAPIHandler):
         # DATABASE QUERY: Supprimer une pièce et enregistrer dans l'historique
         async with async_session_maker() as session:
             result = await session.execute(
-                select(Room)
-                .join(House)
-                .where(Room.id == int(room_id), House.user_id == current_user["id"])
+                select(Room).join(House).where(Room.id == int(room_id))
             )
             room = result.scalar_one_or_none()
 
             if not room:
+                return self.write_error_json("Room not found", 404)
+
+            if not await can_manage_house(session, current_user["id"], room.house_id):
                 return self.write_error_json("Room not found", 404)
 
             # Enregistrer dans l'historique avant retrait

@@ -20,10 +20,22 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
 
         # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
+            from ..utils.permissions import can_manage_house
+
+            # Vérifier si l'utilisateur peut gérer la maison (propriétaire ou admin)
+            if not await can_manage_house(session, user_id, int(house_id)):
+                self.set_status(403)
+                self.write(
+                    "<h1>403 - Accès refusé</h1>"
+                    "<p>Vous devez être propriétaire ou administrateur "
+                    "pour modifier l'intérieur.</p>"
+                )
+                return
+
             result = await session.execute(
                 select(House)
                 .options(selectinload(House.rooms))
-                .where(House.id == int(house_id), House.user_id == user_id)
+                .where(House.id == int(house_id))
             )
             house = result.scalar_one_or_none()
 
@@ -44,8 +56,20 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
 
         # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
+            from ..utils.permissions import can_manage_house
+
+            # Vérifier si l'utilisateur peut gérer la maison (propriétaire ou admin)
+            if not await can_manage_house(session, user_id, int(house_id)):
+                self.set_status(403)
+                self.write(
+                    "<h1>403 - Accès refusé</h1>"
+                    "<p>Vous devez être propriétaire ou administrateur "
+                    "pour modifier l'intérieur.</p>"
+                )
+                return
+
             result = await session.execute(
-                select(House).where(House.id == int(house_id), House.user_id == user_id)
+                select(House).where(House.id == int(house_id))
             )
             house = result.scalar_one_or_none()
 
