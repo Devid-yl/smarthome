@@ -85,6 +85,10 @@ class EditHouseInsideHandler(tornado.web.RequestHandler):
                 grid = json.loads(grid_data)
                 house.grid = grid
                 await session.commit()
+                
+                # Broadcast grid update via WebSocket
+                from .websocket import RealtimeHandler
+                RealtimeHandler.broadcast_grid_update(int(house_id), grid)
             except json.JSONDecodeError:
                 self.set_status(400)
                 self.write("<h1>400 - Données de grille invalides</h1>")

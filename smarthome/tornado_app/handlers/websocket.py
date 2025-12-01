@@ -139,3 +139,32 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
         # Nettoyer les clients morts
         for client in dead_clients:
             cls.clients.discard(client)
+
+    @classmethod
+    def broadcast_grid_update(cls, house_id: int, grid: list):
+        """
+        Diffuser une mise à jour de la grille (plan) à tous les clients connectés
+        """
+        message = json.dumps(
+            {
+                "type": "grid_update",
+                "house_id": house_id,
+                "data": {"grid": grid},
+            }
+        )
+
+        print(
+            f"[WebSocket] Broadcasting grid update: house_id={house_id}"
+        )
+        dead_clients = set()
+
+        for client in cls.clients:
+            try:
+                client.write_message(message)
+            except Exception as e:
+                print(f"[WebSocket] Error sending to client: {e}")
+                dead_clients.add(client)
+
+        # Nettoyer les clients morts
+        for client in dead_clients:
+            cls.clients.discard(client)

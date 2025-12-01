@@ -73,6 +73,13 @@ function handleMessage(event) {
             case 'equipment_update':
                 updateEquipmentInUI(message.data);
                 break;
+            case 'grid_update':
+                // Mise à jour du plan de la maison
+                if (message.house_id && window.currentHouseId && 
+                    message.house_id === window.currentHouseId) {
+                    updateGridInUI(message.data);
+                }
+                break;
             case 'user_position_changed':
             case 'user_position_deactivated':
                 // Filtrer par house_id pour les positions
@@ -310,6 +317,58 @@ function updateEquipmentCardStyle(card, data) {
 }
 
 /**
+ * Met à jour la grille (plan) de la maison en temps réel
+ */
+function updateGridInUI(data) {
+    console.log('[WebSocket] Mise à jour du plan de la maison:', data);
+    
+    // Mettre à jour l'objet house global avec la nouvelle grille
+    if (typeof house !== 'undefined' && house) {
+        house.grid = data.grid;
+        console.log('[WebSocket] Grille mise à jour dans l\'objet house');
+        
+        // Rafraîchir l'affichage du plan
+        if (typeof displayHouseGrid === 'function') {
+            displayHouseGrid();
+            console.log('[WebSocket] Plan de la maison rafraîchi');
+            
+            // Afficher une notification discrète
+            showGridUpdateNotification();
+        }
+    }
+}
+
+/**
+ * Affiche une notification discrète de mise à jour du plan
+ */
+function showGridUpdateNotification() {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #4caf50;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-size: 14px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.innerHTML = '🏠 Plan mis à jour';
+    document.body.appendChild(notification);
+    
+    // Retirer après 3 secondes
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+/**
  * Ferme proprement la connexion WebSocket
  */
 function disconnectWebSocket() {
@@ -332,13 +391,33 @@ if (document.readyState === 'loading') {
 // Déconnexion propre à la fermeture de la page
 window.addEventListener('beforeunload', disconnectWebSocket);
 
-// CSS pour l'animation de pulse
+// CSS pour les animations
 const style = document.createElement('style');
 style.textContent = `
 @keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+}
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
 }
 `;
 document.head.appendChild(style);

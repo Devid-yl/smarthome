@@ -245,12 +245,21 @@ function displayHouseGrid() {
                 if (room) {
                     tooltipText = room.name;
                     
-                    // Afficher la couleur et le nom UNIQUEMENT si ni capteurs ni équipements ne sont affichés
-                    if (!showSensors && !showEquipments) {
-                        // Couleur aléatoire basée sur l'ID
-                        const hue = (roomId * 137.5) % 360;
+                    // Couleur aléatoire basée sur l'ID
+                    const hue = (roomId * 137.5) % 360;
+                    
+                    // Déterminer si la cellule a des équipements ou capteurs visibles
+                    const hasVisibleSensors = showSensors && cellSensors.length > 0;
+                    const hasVisibleEquipments = showEquipments && cellEquipments.length > 0;
+                    
+                    if (hasVisibleSensors || hasVisibleEquipments) {
+                        // Mode discret : couleur très légère (presque transparente)
+                        bgColor = `hsla(${hue}, 70%, 85%, 0.3)`;
+                        // Afficher le nom en très petit et grisé
+                        cellContent = `<div style="font-size: 8px; color: #ccc; font-weight: 400; text-align: center; line-height: 1.2; opacity: 0.5;">${room.name.substring(0, 3)}</div>`;
+                    } else {
+                        // Mode normal : couleur vive et nom visible
                         bgColor = `hsl(${hue}, 70%, 85%)`;
-                        // Afficher le nom abrégé (3 premières lettres)
                         cellContent = `<div style="font-size: 10px; color: #555; font-weight: 600; text-align: center; line-height: 1.2;">${room.name.substring(0, 3)}</div>`;
                     }
                 }
