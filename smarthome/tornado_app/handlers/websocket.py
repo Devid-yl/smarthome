@@ -288,3 +288,32 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
         # Nettoyer les clients morts
         for client in dead_clients:
             cls.clients.discard(client)
+
+    @classmethod
+    def broadcast_access_request(cls, house_id: int, request_data: dict):
+        """
+        Diffuser une nouvelle demande d'accès aux propriétaires/admins
+        """
+        message = json.dumps(
+            {
+                "type": "access_request",
+                "house_id": house_id,
+                "data": request_data,
+            }
+        )
+
+        print(
+            f"[WebSocket] Broadcasting access request: house_id={house_id}, user={request_data.get('username')}"
+        )
+        dead_clients = set()
+
+        for client in cls.clients:
+            try:
+                client.write_message(message)
+            except Exception as e:
+                print(f"[WebSocket] Error sending to client: {e}")
+                dead_clients.add(client)
+
+        # Nettoyer les clients morts
+        for client in dead_clients:
+            cls.clients.discard(client)

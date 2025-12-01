@@ -247,11 +247,17 @@ class HouseMemberDetailHandler(BaseAPIHandler):
                     self.write({"error": "Member not found"})
                     return
 
-                # Case 1: Accept/reject an invitation (invited user)
+                # Case 1: Accept/reject an invitation (invited user only if invited by someone)
                 if new_status and member.user_id == user_id:
                     if new_status not in ["accepted", "rejected"]:
                         self.set_status(400)
                         self.write({"error": "Invalid status"})
+                        return
+                    
+                    # Si c'est une auto-demande (invited_by is NULL), l'utilisateur ne peut pas la traiter lui-même
+                    if member.invited_by is None:
+                        self.set_status(403)
+                        self.write({"error": "You cannot accept/reject your own access request. Only the owner can."})
                         return
 
                     old_status = member.status
@@ -279,6 +285,48 @@ class HouseMemberDetailHandler(BaseAPIHandler):
 
                     self.write(
                         {"message": f"Invitation {new_status}", "status": member.status}
+                    )
+                    return
+                
+                # Case 1b: Owner/Admin accepting/rejecting access request
+                if new_status and member.user_id != user_id:
+                    # Vérifier que l'utilisateur actuel est propriétaire ou admin
+                    if not await can_manage_house(session, user_id, house_id):
+                        self.set_status(403)
+                        self.write({"error": "Permission denied. Only owner/admin can accept/reject access requests."})
+                        return
+                    
+                    if new_status not in ["accepted", "rejected"]:
+                        self.set_status(400)
+                        self.write({"error": "Invalid status"})
+                        return
+                    
+                    old_status = member.status
+                    member.status = new_status
+                    if new_status == "accepted":
+                        member.accepted_at = datetime.utcnow()
+                    
+                    # Historique
+                    event = EventHistory(
+                        house_id=house_id,
+                        user_id=user_id,
+                        event_type="member_action",
+                        entity_type="member",
+                        entity_id=member.id,
+                        description=f"Access request {new_status} by {current_user['username']}",
+                        event_metadata={
+                            "action": "access_request_response",
+                            "old_status": old_status,
+                            "new_status": new_status,
+                            "target_user_id": member.user_id,
+                        },
+                        ip_address=self.request.remote_ip,
+                    )
+                    session.add(event)
+                    await session.commit()
+                    
+                    self.write(
+                        {"message": f"Access request {new_status}", "status": member.status}
                     )
                     return
 
@@ -412,11 +460,15 @@ class MyInvitationsHandler(BaseAPIHandler):
 
         # DATABASE QUERY: Opération sur la base de données
         async with async_session_maker() as session:
+            # Récupérer uniquement les VRAIES invitations (invited_by != NULL)
+            # Exclure les auto-demandes (invited_by = NULL)
             query = (
                 select(HouseMember)
                 .where(
                     and_(
-                        HouseMember.user_id == user_id, HouseMember.status == "pending"
+                        HouseMember.user_id == user_id,
+                        HouseMember.status == "pending",
+                        HouseMember.invited_by.is_not(None)  # Seulement les invitations reçues
                     )
                 )
                 .options(
@@ -567,6 +619,60 @@ class SearchHousesHandler(BaseAPIHandler):
             self.write({"houses": houses_data})
 
 
+class HouseAccessRequestsHandler(BaseAPIHandler):
+    """Handler pour récupérer les demandes d'accès à une maison (propriétaire uniquement)."""
+
+    async def get(self, house_id):
+        """Liste toutes les demandes d'accès en attente pour une maison."""
+        current_user = self.get_current_user()
+        if not current_user:
+            self.set_status(401)
+            self.write({"error": "Not authenticated"})
+            return
+
+        house_id = int(house_id)
+        user_id = current_user["id"]
+
+        # DATABASE QUERY: Opération sur la base de données
+        async with async_session_maker() as session:
+            # Vérifier que l'utilisateur est propriétaire ou administrateur
+            if not await can_manage_house(session, user_id, house_id):
+                self.set_status(403)
+                self.write({"error": "Access denied. Only owner/admin can view access requests"})
+                return
+
+            # Récupérer toutes les demandes en attente (invited_by = None = auto-demande)
+            query = (
+                select(HouseMember)
+                .where(
+                    and_(
+                        HouseMember.house_id == house_id,
+                        HouseMember.status == "pending",
+                        HouseMember.invited_by.is_(None)  # Auto-demandes uniquement
+                    )
+                )
+                .options(selectinload(HouseMember.user))
+                .order_by(HouseMember.invited_at.desc())
+            )
+
+            result = await session.execute(query)
+            requests = result.scalars().all()
+
+            requests_data = []
+            for req in requests:
+                req_info = {
+                    "id": req.id,
+                    "user_id": req.user_id,
+                    "username": req.user.username if req.user else None,
+                    "email": req.user.email if req.user else None,
+                    "role": req.role,
+                    "requested_at": req.invited_at.isoformat(),
+                }
+                requests_data.append(req_info)
+
+            self.write({"requests": requests_data})
+
+
 class RequestHouseAccessHandler(BaseAPIHandler):
     """Handler pour demander l'accès à une maison."""
 
@@ -641,6 +747,21 @@ class RequestHouseAccessHandler(BaseAPIHandler):
                         )
                         session.add(event)
                         await session.commit()
+                        await session.refresh(existing)
+
+                        # Broadcast WebSocket pour notifier en temps réel
+                        from .websocket import RealtimeHandler
+                        RealtimeHandler.broadcast_access_request(
+                            house_id=house_id,
+                            request_data={
+                                "id": existing.id,
+                                "user_id": user_id,
+                                "username": current_user['username'],
+                                "email": current_user['email'],
+                                "role": existing.role,
+                                "requested_at": existing.invited_at.isoformat(),
+                            }
+                        )
 
                         self.set_status(201)
                         self.write(
@@ -676,6 +797,20 @@ class RequestHouseAccessHandler(BaseAPIHandler):
 
                 await session.commit()
                 await session.refresh(new_request)
+
+                # Broadcast WebSocket pour notifier en temps réel
+                from .websocket import RealtimeHandler
+                RealtimeHandler.broadcast_access_request(
+                    house_id=house_id,
+                    request_data={
+                        "id": new_request.id,
+                        "user_id": user_id,
+                        "username": current_user['username'],
+                        "email": current_user['email'],
+                        "role": new_request.role,
+                        "requested_at": new_request.invited_at.isoformat(),
+                    }
+                )
 
                 self.set_status(201)
                 self.write(

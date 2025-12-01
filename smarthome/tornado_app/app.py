@@ -48,6 +48,7 @@ from .handlers.house_members import (
     SearchUsersHandler,
     SearchHousesHandler,
     RequestHouseAccessHandler,
+    HouseAccessRequestsHandler,
 )
 from .handlers.event_history import (
     EventHistoryHandler,
@@ -157,6 +158,7 @@ def make_app():
             (r"/api/houses/([0-9]+)/members", HouseMembersHandler),
             (r"/api/houses/([0-9]+)/members/([0-9]+)", HouseMemberDetailHandler),
             (r"/api/houses/([0-9]+)/request-access", RequestHouseAccessHandler),
+            (r"/api/houses/([0-9]+)/access-requests", HouseAccessRequestsHandler),
             (r"/api/invitations", MyInvitationsHandler),
             (r"/api/users/search", SearchUsersHandler),
             (r"/api/houses/search", SearchHousesHandler),

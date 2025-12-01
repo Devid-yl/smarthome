@@ -82,6 +82,7 @@ async function init() {
     await loadEquipments();
     await loadAutomationRules();
     await loadUserPositions(); // Always load positions to see other users
+    await loadAccessRequestsCount(); // Charger le nombre de demandes d'accès
     
     // Rafraîchir le plan après le chargement des pièces
     displayHouseGrid();
@@ -2221,6 +2222,29 @@ function handlePositionUpdate(data) {
     } else if (data.type === 'user_position_deactivated') {
         userPositions.delete(data.user_id);
         displayHouseGrid();
+    }
+}
+
+// ==================== ACCESS REQUESTS BADGE ====================
+
+async function loadAccessRequestsCount() {
+    try {
+        const response = await fetch(`/api/houses/${houseId}/access-requests`);
+        if (response.ok) {
+            const data = await response.json();
+            const count = data.requests.length;
+            const badge = document.getElementById('access-requests-badge');
+            
+            if (count > 0 && badge) {
+                badge.textContent = count;
+                badge.style.display = 'inline';
+            }
+        } else if (response.status === 403) {
+            // Pas propriétaire/admin, ne rien afficher
+            return;
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des demandes d\'accès:', error);
     }
 }
 

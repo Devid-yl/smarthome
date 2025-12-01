@@ -27,6 +27,20 @@
             </button>
         </div>
 
+        <!-- Section des demandes d'accès -->
+        <div id="access-requests-section" style="display: none; margin-bottom: 2rem;">
+            <div class="header" style="border-bottom: 2px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.25rem; color: var(--primary-color);">
+                        Demandes d'accès 
+                        <span id="requests-count" style="background: var(--danger-color); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.875rem; margin-left: 8px;">0</span>
+                    </h3>
+                    <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.875rem;">Utilisateurs qui souhaitent rejoindre votre maison</p>
+                </div>
+            </div>
+            <div id="access-requests-container"></div>
+        </div>
+
         <div class="members-table">
             <table>
                 <thead>
@@ -125,6 +139,47 @@
             // Charger la maison et les membres
             await loadHouse();
             await loadMembers();
+            await loadAccessRequests();
+            
+            // Connecter WebSocket pour les mises à jour en temps réel
+            connectWebSocket();
+        }
+
+        // WebSocket connection
+        let ws = null;
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/realtime`;
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('[WebSocket] Connecté');
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'access_request' && data.house_id === parseInt(houseId)) {
+                        console.log('[WebSocket] Nouvelle demande d\'accès reçue:', data.data);
+                        // Recharger les demandes d'accès
+                        loadAccessRequests();
+                    }
+                } catch (error) {
+                    console.error('[WebSocket] Erreur parsing:', error);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('[WebSocket] Erreur:', error);
+            };
+            
+            ws.onclose = () => {
+                console.log('[WebSocket] Déconnecté, reconnexion dans 3s...');
+                setTimeout(connectWebSocket, 3000);
+            };
         }
 
         async function loadCurrentUser() {
@@ -153,6 +208,101 @@
                 }
             } catch (error) {
                 console.error('Erreur:', error);
+            }
+        }
+
+        async function loadAccessRequests() {
+            try {
+                const response = await fetch(`/api/houses/${houseId}/access-requests`);
+                if (response.ok) {
+                    const data = await response.json();
+                    displayAccessRequests(data.requests);
+                } else if (response.status === 403) {
+                    // Pas propriétaire/admin, on cache la section
+                    document.getElementById('access-requests-section').style.display = 'none';
+                } else {
+                    console.error('Erreur de chargement des demandes');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+
+        function displayAccessRequests(requests) {
+            const section = document.getElementById('access-requests-section');
+            const container = document.getElementById('access-requests-container');
+            const countBadge = document.getElementById('requests-count');
+            
+            if (requests.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            countBadge.textContent = requests.length;
+            
+            container.innerHTML = requests.map(req => {
+                const date = new Date(req.requested_at).toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">
+                                    <strong>${req.username}</strong>
+                                    <span style="color: var(--text-muted); font-size: 0.875rem; font-weight: normal;">(${req.email})</span>
+                                </h4>
+                                <p style="margin: 0; font-size: 0.875rem; color: #78350f;">
+                                    Demande envoyée le ${date}
+                                </p>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-success" onclick="handleAccessRequest(${req.id}, 'accepted')" style="font-size: 0.875rem; padding: 8px 16px;">
+                                    Accepter
+                                </button>
+                                <button class="btn btn-danger" onclick="handleAccessRequest(${req.id}, 'rejected')" style="font-size: 0.875rem; padding: 8px 16px;">
+                                    Refuser
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleAccessRequest(memberId, status) {
+            const action = status === 'accepted' ? 'accepter' : 'refuser';
+            if (!confirm(`Êtes-vous sûr de vouloir ${action} cette demande ?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/houses/${houseId}/members/${memberId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(status === 'accepted' 
+                        ? 'Demande acceptée ! L\'utilisateur est maintenant membre.' 
+                        : 'Demande refusée.');
+                    await loadAccessRequests();
+                    await loadMembers();
+                } else {
+                    alert(data.error || 'Erreur lors du traitement de la demande');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors du traitement de la demande');
             }
         }
 
