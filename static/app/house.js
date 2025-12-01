@@ -531,8 +531,10 @@ async function loadEquipments() {
         const response = await fetch('/api/equipments');
         if (response.ok) {
             const data = await response.json();
-            // Filtrer par house_id
-            equipments = data.equipments.filter(e => e.house_id === parseInt(houseId));
+            // Filtrer par house_id et trier par ID pour maintenir un ordre stable
+            equipments = data.equipments
+                .filter(e => e.house_id === parseInt(houseId))
+                .sort((a, b) => a.id - b.id);
             displayEquipments();
         }
     } catch (error) {
