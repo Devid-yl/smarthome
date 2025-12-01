@@ -80,6 +80,34 @@ function handleMessage(event) {
                     updateGridInUI(message.data);
                 }
                 break;
+            case 'equipment_crud':
+                // Ajout/modification/suppression d'équipement
+                if (message.house_id && window.currentHouseId && 
+                    message.house_id === window.currentHouseId) {
+                    handleEquipmentCRUD(message.action, message.data);
+                }
+                break;
+            case 'sensor_crud':
+                // Ajout/modification/suppression de capteur
+                if (message.house_id && window.currentHouseId && 
+                    message.house_id === window.currentHouseId) {
+                    handleSensorCRUD(message.action, message.data);
+                }
+                break;
+            case 'room_crud':
+                // Ajout/modification/suppression de pièce
+                if (message.house_id && window.currentHouseId && 
+                    message.house_id === window.currentHouseId) {
+                    handleRoomCRUD(message.action, message.data);
+                }
+                break;
+            case 'automation_rule_crud':
+                // Ajout/modification/suppression de règle d'automatisation
+                if (message.house_id && window.currentHouseId && 
+                    message.house_id === window.currentHouseId) {
+                    handleAutomationRuleCRUD(message.action, message.data);
+                }
+                break;
             case 'user_position_changed':
             case 'user_position_deactivated':
                 // Filtrer par house_id pour les positions
@@ -356,7 +384,163 @@ function showGridUpdateNotification() {
         font-size: 14px;
         animation: slideIn 0.3s ease-out;
     `;
-    notification.innerHTML = '🏠 Plan mis à jour';
+    notification.innerHTML = 'Plan mis à jour';
+    document.body.appendChild(notification);
+    
+    // Retirer après 3 secondes
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+/**
+ * Gère les événements CRUD d'équipements
+ */
+function handleEquipmentCRUD(action, data) {
+    console.log('[WebSocket] Equipment CRUD:', action, data);
+    
+    if (action === 'create') {
+        // Recharger la liste des équipements
+        if (typeof loadEquipments === 'function') {
+            loadEquipments().then(() => {
+                displayHouseGrid();
+                showNotification('Nouvel équipement ajouté', '#2196f3');
+            });
+        }
+    } else if (action === 'update') {
+        // Recharger la liste des équipements pour mise à jour du nom
+        if (typeof loadEquipments === 'function') {
+            loadEquipments().then(() => {
+                displayHouseGrid();
+                showNotification('Équipement modifié', '#2196f3');
+            });
+        }
+    } else if (action === 'delete') {
+        // Recharger la liste des équipements
+        if (typeof loadEquipments === 'function') {
+            loadEquipments().then(() => {
+                displayHouseGrid();
+                showNotification('Équipement supprimé', '#ff9800');
+            });
+        }
+    }
+}
+
+/**
+ * Gère les événements CRUD de capteurs
+ */
+function handleSensorCRUD(action, data) {
+    console.log('[WebSocket] Sensor CRUD:', action, data);
+    
+    if (action === 'create') {
+        // Recharger la liste des capteurs
+        if (typeof loadSensors === 'function') {
+            loadSensors().then(() => {
+                displayHouseGrid();
+                showNotification('Nouveau capteur ajouté', '#4caf50');
+            });
+        }
+    } else if (action === 'update') {
+        // Recharger la liste des capteurs pour mise à jour du nom/unité
+        if (typeof loadSensors === 'function') {
+            loadSensors().then(() => {
+                displayHouseGrid();
+                showNotification('Capteur modifié', '#4caf50');
+            });
+        }
+    } else if (action === 'delete') {
+        // Recharger la liste des capteurs
+        if (typeof loadSensors === 'function') {
+            loadSensors().then(() => {
+                displayHouseGrid();
+                showNotification('Capteur supprimé', '#ff9800');
+            });
+        }
+    }
+}
+
+/**
+ * Gère les événements CRUD de pièces
+ */
+function handleRoomCRUD(action, data) {
+    console.log('[WebSocket] Room CRUD:', action, data);
+    
+    if (action === 'create') {
+        // Recharger toute la maison pour avoir les nouvelles pièces
+        if (typeof loadHouse === 'function') {
+            loadHouse().then(() => {
+                showNotification('Nouvelle pièce ajoutée', '#9c27b0');
+            });
+        }
+    } else if (action === 'update') {
+        // Recharger toute la maison pour la mise à jour du nom
+        if (typeof loadHouse === 'function') {
+            loadHouse().then(() => {
+                showNotification('Pièce modifiée', '#9c27b0');
+            });
+        }
+    } else if (action === 'delete') {
+        // Recharger toute la maison
+        if (typeof loadHouse === 'function') {
+            loadHouse().then(() => {
+                showNotification('Pièce supprimée', '#ff9800');
+            });
+        }
+    }
+}
+
+/**
+ * Gère les événements CRUD de règles d'automatisation
+ */
+function handleAutomationRuleCRUD(action, data) {
+    console.log('[WebSocket] Automation Rule CRUD:', action, data);
+    
+    if (action === 'create') {
+        // Recharger les règles d'automatisation
+        if (typeof loadAutomationRules === 'function') {
+            loadAutomationRules().then(() => {
+                showNotification('Nouvelle règle d\'automatisation ajoutée', '#673ab7');
+            });
+        }
+    } else if (action === 'update') {
+        // Recharger les règles d'automatisation
+        if (typeof loadAutomationRules === 'function') {
+            loadAutomationRules().then(() => {
+                showNotification('Règle d\'automatisation modifiée', '#673ab7');
+            });
+        }
+    } else if (action === 'delete') {
+        // Recharger les règles d'automatisation
+        if (typeof loadAutomationRules === 'function') {
+            loadAutomationRules().then(() => {
+                showNotification('Règle d\'automatisation supprimée', '#ff9800');
+            });
+        }
+    }
+}
+
+/**
+ * Affiche une notification avec couleur personnalisée
+ */
+function showNotification(message, color) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${color};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-size: 14px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.innerHTML = message;
     document.body.appendChild(notification);
     
     // Retirer après 3 secondes

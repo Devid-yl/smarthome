@@ -104,6 +104,23 @@ class SensorsListHandler(BaseAPIHandler):
             session.add(event)
             await session.commit()
 
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_sensor_crud(
+                "create",
+                {
+                    "id": new_sensor.id,
+                    "house_id": new_sensor.house_id,
+                    "room_id": new_sensor.room_id,
+                    "name": new_sensor.name,
+                    "type": new_sensor.type,
+                    "value": new_sensor.value,
+                    "unit": new_sensor.unit,
+                    "is_active": new_sensor.is_active,
+                },
+                new_sensor.house_id
+            )
+
             self.write_json(
                 {
                     "id": new_sensor.id,
@@ -247,6 +264,22 @@ class SensorDetailHandler(BaseAPIHandler):
                 RealtimeHandler.broadcast_sensor_update(
                     sensor.id, sensor.value, sensor.is_active, sensor.house_id
                 )
+            
+            # Si changement de nom ou unit, broadcaster pour mise à jour complète
+            if "name" in changes or "unit" in changes:
+                from .websocket import RealtimeHandler
+                RealtimeHandler.broadcast_sensor_crud(
+                    "update",
+                    {
+                        "id": sensor.id,
+                        "name": sensor.name,
+                        "type": sensor.type,
+                        "value": sensor.value,
+                        "unit": sensor.unit,
+                        "is_active": sensor.is_active,
+                    },
+                    sensor.house_id
+                )
 
             self.write_json(
                 {
@@ -293,8 +326,19 @@ class SensorDetailHandler(BaseAPIHandler):
             )
             session.add(event)
 
+            sensor_id = sensor.id
+            house_id = sensor.house_id
+            
             await session.delete(sensor)
             await session.commit()
+
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_sensor_crud(
+                "delete",
+                {"id": sensor_id},
+                house_id
+            )
 
             self.write_json({"message": "Sensor deleted successfully"})
 

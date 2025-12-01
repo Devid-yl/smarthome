@@ -106,6 +106,23 @@ class EquipmentsListHandler(BaseAPIHandler):
             session.add(event)
             await session.commit()
 
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_equipment_crud(
+                "create",
+                {
+                    "id": new_equipment.id,
+                    "house_id": new_equipment.house_id,
+                    "room_id": new_equipment.room_id,
+                    "name": new_equipment.name,
+                    "type": new_equipment.type,
+                    "state": new_equipment.state,
+                    "is_active": new_equipment.is_active,
+                    "allowed_roles": new_equipment.allowed_roles,
+                },
+                new_equipment.house_id
+            )
+
             self.write_json(
                 {
                     "id": new_equipment.id,
@@ -261,6 +278,21 @@ class EquipmentDetailHandler(BaseAPIHandler):
 
             client_count = len(RealtimeHandler.clients)
             print(f"[Equipment] Clients WebSocket connectés: {client_count}")
+            
+            # Si changement de nom ou allowed_roles, broadcaster pour mise à jour complète
+            if "name" in changes or "allowed_roles" in changes:
+                RealtimeHandler.broadcast_equipment_crud(
+                    "update",
+                    {
+                        "id": equipment.id,
+                        "name": equipment.name,
+                        "type": equipment.type,
+                        "state": equipment.state,
+                        "is_active": equipment.is_active,
+                        "allowed_roles": equipment.allowed_roles,
+                    },
+                    equipment.house_id
+                )
             RealtimeHandler.broadcast_equipment_update(
                 equipment.id,
                 equipment.type,
@@ -316,8 +348,19 @@ class EquipmentDetailHandler(BaseAPIHandler):
             )
             session.add(event)
 
+            equipment_id = equipment.id
+            house_id = equipment.house_id
+            
             await session.delete(equipment)
             await session.commit()
+
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_equipment_crud(
+                "delete",
+                {"id": equipment_id},
+                house_id
+            )
 
             self.write_json({"message": "Equipment deleted successfully"})
 

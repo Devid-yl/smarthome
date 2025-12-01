@@ -512,6 +512,14 @@ class RoomDetailAPIHandler(BaseAPIHandler):
             await session.commit()
             await session.refresh(room)
 
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_room_crud(
+                "update",
+                {"id": room.id, "name": room.name},
+                room.house_id
+            )
+
             self.write_json(
                 {
                     "id": room.id,
@@ -552,7 +560,18 @@ class RoomDetailAPIHandler(BaseAPIHandler):
             )
             session.add(event)
 
+            room_id = room.id
+            house_id = room.house_id
+
             await session.delete(room)
             await session.commit()
+
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_room_crud(
+                "delete",
+                {"id": room_id},
+                house_id
+            )
 
             self.write_json({"message": "Room deleted successfully"})

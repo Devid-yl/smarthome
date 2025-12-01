@@ -132,6 +132,14 @@ class AutomationRulesListHandler(BaseAPIHandler):
                 await session.commit()
                 await session.refresh(rule)
 
+                # Broadcast via WebSocket
+                from .websocket import RealtimeHandler
+                RealtimeHandler.broadcast_automation_rule_crud(
+                    "create",
+                    {"id": rule.id, "name": rule.name},
+                    rule.house_id
+                )
+
                 self.write_json(
                     {
                         "message": "Rule created",
@@ -236,6 +244,14 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
 
             await session.commit()
 
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_automation_rule_crud(
+                "update",
+                {"id": rule.id, "name": rule.name},
+                rule.house_id
+            )
+
             self.write_json({"message": "Rule updated"})
 
     async def delete(self, rule_id):
@@ -248,7 +264,18 @@ class AutomationRuleDetailHandler(BaseAPIHandler):
                 self.write_error_json("Règle introuvable", 404)
                 return
 
+            rule_id = rule.id
+            house_id = rule.house_id
+
             await session.delete(rule)
             await session.commit()
+
+            # Broadcast via WebSocket
+            from .websocket import RealtimeHandler
+            RealtimeHandler.broadcast_automation_rule_crud(
+                "delete",
+                {"id": rule_id},
+                house_id
+            )
 
             self.write_json({"message": "Rule deleted"})

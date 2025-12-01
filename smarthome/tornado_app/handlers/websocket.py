@@ -168,3 +168,123 @@ class RealtimeHandler(tornado.websocket.WebSocketHandler):
         # Nettoyer les clients morts
         for client in dead_clients:
             cls.clients.discard(client)
+
+    @classmethod
+    def broadcast_equipment_crud(cls, action: str, equipment_data: dict, house_id: int):
+        """
+        Diffuser un événement CRUD d'équipement (create/delete) à tous les clients
+        """
+        message = json.dumps(
+            {
+                "type": "equipment_crud",
+                "house_id": house_id,
+                "action": action,  # 'create' or 'delete'
+                "data": equipment_data,
+            }
+        )
+
+        print(
+            f"[WebSocket] Broadcasting equipment {action}: equipment_id={equipment_data.get('id')}"
+        )
+        dead_clients = set()
+
+        for client in cls.clients:
+            try:
+                client.write_message(message)
+            except Exception as e:
+                print(f"[WebSocket] Error sending to client: {e}")
+                dead_clients.add(client)
+
+        # Nettoyer les clients morts
+        for client in dead_clients:
+            cls.clients.discard(client)
+
+    @classmethod
+    def broadcast_sensor_crud(cls, action: str, sensor_data: dict, house_id: int):
+        """
+        Diffuser un événement CRUD de capteur (create/delete) à tous les clients
+        """
+        message = json.dumps(
+            {
+                "type": "sensor_crud",
+                "house_id": house_id,
+                "action": action,  # 'create' or 'delete'
+                "data": sensor_data,
+            }
+        )
+
+        print(
+            f"[WebSocket] Broadcasting sensor {action}: sensor_id={sensor_data.get('id')}"
+        )
+        dead_clients = set()
+
+        for client in cls.clients:
+            try:
+                client.write_message(message)
+            except Exception as e:
+                print(f"[WebSocket] Error sending to client: {e}")
+                dead_clients.add(client)
+
+        # Nettoyer les clients morts
+        for client in dead_clients:
+            cls.clients.discard(client)
+
+    @classmethod
+    def broadcast_room_crud(cls, action: str, room_data: dict, house_id: int):
+        """
+        Diffuser un événement CRUD de pièce (create/update/delete) à tous les clients
+        """
+        message = json.dumps(
+            {
+                "type": "room_crud",
+                "house_id": house_id,
+                "action": action,  # 'create', 'update' or 'delete'
+                "data": room_data,
+            }
+        )
+
+        print(
+            f"[WebSocket] Broadcasting room {action}: room_id={room_data.get('id')}"
+        )
+        dead_clients = set()
+
+        for client in cls.clients:
+            try:
+                client.write_message(message)
+            except Exception as e:
+                print(f"[WebSocket] Error sending to client: {e}")
+                dead_clients.add(client)
+
+        # Nettoyer les clients morts
+        for client in dead_clients:
+            cls.clients.discard(client)
+
+    @classmethod
+    def broadcast_automation_rule_crud(cls, action: str, rule_data: dict, house_id: int):
+        """
+        Diffuser un événement CRUD de règle d'automatisation (create/update/delete) à tous les clients
+        """
+        message = json.dumps(
+            {
+                "type": "automation_rule_crud",
+                "house_id": house_id,
+                "action": action,  # 'create', 'update' or 'delete'
+                "data": rule_data,
+            }
+        )
+
+        print(
+            f"[WebSocket] Broadcasting automation rule {action}: rule_id={rule_data.get('id')}"
+        )
+        dead_clients = set()
+
+        for client in cls.clients:
+            try:
+                client.write_message(message)
+            except Exception as e:
+                print(f"[WebSocket] Error sending to client: {e}")
+                dead_clients.add(client)
+
+        # Nettoyer les clients morts
+        for client in dead_clients:
+            cls.clients.discard(client)
