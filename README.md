@@ -308,7 +308,7 @@ Server starting on http://127.0.0.1:8001
 
 ### Vue d'ensemble
 
-L'API REST complète est documentée dans **[doc/API_DOCUMENTATION.md](API_DOCUMENTATION.md)**.
+L'API REST complète est documentée dans **[API_DOCUMENTATION.md](doc/API_DOCUMENTATION.md)**.
 
 **Endpoints principaux** : 50+ au total
 
@@ -351,7 +351,7 @@ curl -X POST http://localhost:8001/api/houses \
 curl -X POST http://localhost:8001/api/automation/trigger -b cookies.txt
 ```
 
-> 📚 Consultez **[doc/API_DOCUMENTATION.md](API_DOCUMENTATION.md)** pour la liste complète des 50+ endpoints avec exemples détaillés.
+> 📚 Consultez **[API_DOCUMENTATION.md](doc/API_DOCUMENTATION.md)** pour la liste complète des 50+ endpoints avec exemples détaillés.
 
 ---
 
